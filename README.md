@@ -37,7 +37,7 @@ Full documentation is available at 📖 [ReadTheDocs](https://jy-fmritoolbox.rea
 
 ## Philosophy
 
-JY-fMRIToolbox is designed to be **inspectable**. Every function is a single readable `.m` file. There are no compiled MEX binaries, no black-box pipelines, and no hidden state. If you want to understand what the toolbox does, you read the code.
+VoxelWise Toolbox is designed to be **inspectable**. Every function is a single readable `.m` file. There are no compiled MEX binaries, no black-box pipelines, and no hidden state. If you want to understand what the toolbox does, you read the code.
 
 The toolbox uses a single, consistent data representation throughout: all brain data is stored as a **228,453-element vectorized array** (or `228453 × T` matrix for time series), corresponding to the in-brain voxels of the 91×109×91 MNI152 2mm template. Conversion between vector and volume forms is lossless and instantaneous via `fmri_vol2vect` / `fmri_vect2vol`.
 
