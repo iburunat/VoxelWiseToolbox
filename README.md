@@ -23,7 +23,7 @@ In active use since 2012. Now publically available.</i>
   <a href="https://doi.org/10.5281/zenodo.19173637">
     <img src="https://zenodo.org/badge/1188857124.svg">
   </a>
-  <a href="https://github.com/iburunat/JY-fMRItoolbox/releases">
+  <a href="https://github.com/iburunat/VoxelWiseToolbox/releases">
     <img src="https://img.shields.io/github/v/release/iburunat/JY-fMRItoolbox?include_prereleases">
   </a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg">
@@ -51,11 +51,11 @@ The toolbox uses a single, consistent data representation throughout: all brain 
 
 ```matlab
 % Option 1: run setup script each session
-run('/path/to/JY-fMRItoolbox/fmritoolbox_setup.m')
+run('/path/to/VoxelWiseToolbox/fmritoolbox_setup.m')
 
 % Option 2: add to startup.m for automatic loading
 % Edit (or create) ~/Documents/MATLAB/startup.m and add:
-run('/path/to/JY-fMRItoolbox/fmritoolbox_setup.m')
+run('/path/to/VoxelWiseToolbox/fmritoolbox_setup.m')
 ```
 
 ## Quick start
@@ -132,7 +132,7 @@ Run `demo_naturalistic_pipeline.m` for a complete end-to-end demonstration requi
 
 If you use this toolbox in published work, please cite:
 
-> Burunat, I., Alluri, V. & Toiviainen, P. JY-fMRItoolbox: A lightweight MATLAB toolbox for transparent fMRI analysis. Zenodo, 2026. [https://doi.org/10.5281/zenodo.19173638](https://zenodo.org/records/19173638)
+> Burunat, I., Alluri, V. & Toiviainen, P. VoxelWise Toolbox: A lightweight MATLAB toolbox for transparent fMRI analysis. Zenodo, 2026. [https://doi.org/10.5281/zenodo.19173638](https://zenodo.org/records/19173638)
  
 A BibTeX entry wil be available in `CITATION.cff`.
 
