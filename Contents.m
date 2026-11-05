@@ -1,113 +1,142 @@
-% JY-fMRIToolbox — Lightweight MATLAB toolbox for transparent fMRI analysis
+% VoxelWise Toolbox — Lightweight MATLAB toolbox for transparent fMRI analysis
 %
 % Run fmritoolbox_setup.m to add the toolbox to your MATLAB path.
 % Type "help <function_name>" for detailed documentation on any function.
 %
-% -------------------------------------------------------------------------
-% I/O
-% -------------------------------------------------------------------------
-%   fmri_readnii            - Read 3D or 4D NIfTI (.nii / .img) file
-%   fmri_export             - Save 3D or 4D data as NIfTI file
-%   fmri_resamplenii        - Resample NIfTI to target voxel grid
+% Voxelwise analysis of fMRI data on the MNI152 2mm grid (91x109x91,
+% 228453 in-brain voxels). Every function takes and returns data in that
+% single layout, so any function composes with any other.
+%
+% Requires MATLAB R2019a or later. No other MathWorks toolbox is needed:
+% R2019a is the release in which xcorr, used by fmri_effdf, moved into base
+% MATLAB from the Signal Processing Toolbox.
+%
+% 83 public functions. Internal helpers live in core/private/ and are
+% deliberately not listed here.
 %
 % -------------------------------------------------------------------------
-% Space: coordinates and data representation
+% I/O and NIfTI handling
 % -------------------------------------------------------------------------
-%   fmri_vol2vect           - Vectorize 91x109x91 volume to 228453 brain vector
-%   fmri_vect2vol           - Devectorize 228453 brain vector to 91x109x91 volume
-%   fmri_sub2mni            - Voxel subscripts to MNI coordinates (mm)
-%   fmri_mni2sub            - MNI coordinates to voxel subscripts
-%   fmri_mni2tal            - MNI to Talairach coordinates
-%   fmri_ind2sub            - Linear brain index to voxel subscripts
-%   fmri_sub2ind            - Voxel subscripts to linear brain index
-%   fmri_mirror             - Left-right flip (sagittal mirror)
-%   fmri_big2small          - Crop 91x109x91 to 79x95x68 bounding box
-%   fmri_small2big          - Embed 79x95x68 into 91x109x91 grid
-%   fmri_bin                - Bin continuous data into discrete colour bands
+%   fmri_readnii                - Reads a 3D or 4D NIfTI (.nii) or Analyze (.img/.hdr) file.
+%   fmri_export                 - Saves 3D or 4D volume data as a NIfTI file (.nii).
+%   fmri_checknifti             - Warns if the bundled NIFTI toolbox is missing or unpatched.
+%   fmri_tomni152               - Resamples an MNI-space NIfTI onto the toolbox 2mm grid.
 %
 % -------------------------------------------------------------------------
-% Preprocessing
+% Space, coordinates and reshaping
 % -------------------------------------------------------------------------
-%   fmri_detrend            - Spline-based temporal detrending
-%   fmri_tempsmooth         - Temporal Gaussian smoothing
-%   fmri_bandpassfilter     - Non-causal FFT bandpass filter
-%   fmri_correctmovement    - Regress out motion parameters (OLS)
-%   fmri_downsample         - Spatial downsampling by integer factor
-%   fmri_upsample           - Restore spatially downsampled data
-%   fmri_wiener             - Wiener deconvolution (BOLD -> neural)
-%   fmri_zscorevoldata      - Voxelwise z-scoring of time series
+%   fmri_vol2vect               - Vectorizes a 91x109x91 brain volume to a 228453-element vector.
+%   fmri_vect2vol               - Devectorizes a 228453-element brain vector to a 91x109x91 volume.
+%   fmri_mni2sub                - Converts MNI coordinates (mm) to voxel subscripts.
+%   fmri_sub2mni                - Converts voxel subscripts to MNI coordinates (mm).
+%   fmri_ind2sub                - Converts linear brain indices to voxel subscripts.
+%   fmri_sub2ind                - Converts voxel subscripts to linear brain indices.
+%   fmri_mni2tal                - Converts MNI152 coordinates to Talairach space.
+%   fmri_mirror                 - Flips a vectorized brain map left-to-right (sagittal mirror).
+%   fmri_voxdist                - Euclidean distance (mm) between brain voxels.
+%   fmri_upsample               - Restores spatially downsampled fMRI data to full resolution.
+%   fmri_downsample             - Spatially downsamples vectorized fMRI data by integer factor.
 %
 % -------------------------------------------------------------------------
-% ROI
+% Temporal preprocessing
 % -------------------------------------------------------------------------
-%   fmri_regionmask         - Binary mask for one or more atlas regions
-%   fmri_regionnumber       - Atlas ROI name and number for voxel coordinates
-%   fmri_nregion            - Region name(s) for atlas ROI number(s)
-%   fmri_regiontable        - Cluster and ROI table for thresholded map
-%   fmri_vox2reg            - Average voxel data within atlas ROIs
-%   fmri_reg2vox            - Map ROI-level data back to voxel space
-%   fmri_spheremask         - Spherical ROI mask at a given voxel
-%   fmri_banumber           - Brodmann area number for voxel coordinates
-%   fmri_maskdata           - Masks volume data with a selected ROI mask
-%   fmri_atlas              - List atlases and regions by atlas number
-%   fmri_loadatlas          - Helper function used internally by atlas functions
+%   fmri_detrend                - Removes low-frequency drift from fMRI data using spline fitting.
+%   fmri_bandpassfilter         - Non-causal FFT-based bandpass filter for fMRI time series.
+%   fmri_correctmovement        - Removes motion artefacts from fMRI data via regression.
+%   fmri_tempsmooth             - Temporal Gaussian smoothing of fMRI time series.
+%   fmri_zscorevoldata          - Voxelwise z-scoring of fMRI time series.
+%   fmri_wiener                 - Wiener deconvolution: estimate neural signal from BOLD response.
+%   fmri_doublegamma            - Double-gamma haemodynamic response function.
+%
 % -------------------------------------------------------------------------
-% Analysis
+% Atlases and regions of interest
 % -------------------------------------------------------------------------
-%   fmri_corregressor       - Voxelwise correlation of regressor(s) with data
-%   fmri_corrvoldata        - Voxelwise correlation between two datasets
-%   fmri_xcorr              - Voxelwise lagged cross-correlation
-%   fmri_simmat             - Temporal similarity (correlation) matrix
-%   fmri_partcorr           - Partial correlation controlling for confounds
-%   fmri_r2p                - Pearson r to p-value conversion
-%   fmri_fisherz            - Pearson r to Fisher z-score conversion
-%   fmri_fmri_fisherz2p     - Fisher z-score to p-value conversion
-%   fmri_effdf              - Effective degrees of freedom (autocorrelation)
-%   fmri_doublegamma        - Canonical double-gamma HRF
-%   fmri_dicemirror         - DICE coefficient for left-right symmetry of brain map
+%   fmri_loadatlas              - Loads atlas ROI map and region labels by atlas number.
+%   fmri_atlas                  - Lists all available atlases and their region counts.
+%   fmri_regionmask             - Binary brain mask for one or more atlas regions.
+%   fmri_spheremask             - Spherical ROI mask centred on a given voxel.
+%   fmri_maskdata               - Applies a binary ROI mask to volume data.
+%   fmri_regionnumber           - Looks up atlas ROI name and number for voxel coordinates.
+%   fmri_regiontable            - Cluster and ROI table for a thresholded statistical map.
+%   fmri_nregion                - Returns the region name(s) for one or more atlas ROI numbers.
+%   fmri_vox2reg                - Averages voxel data within atlas ROIs to produce ROI-level data.
+%   fmri_reg2vox                - Maps ROI-level data back to voxel space for visualisation.
+%   fmri_banumber               - Shortcut for quick Brodmann lookups.
+%
+% -------------------------------------------------------------------------
+% Analysis: effect estimation
+% -------------------------------------------------------------------------
+%   fmri_corregressor           - Voxelwise correlation of regressor(s) with fMRI data.
+%   fmri_corrmat                - Column-wise pattern similarity matrix between two fMRI datasets.
+%   fmri_corrvoldata            - Voxelwise Pearson correlation between two fMRI datasets.
+%   fmri_xcorr                  - Voxelwise lagged cross-correlation between regressor and fMRI data.
+%   fmri_partcorr               - Voxelwise partial correlation with confounds removed.
+%   fmri_ppi                    - Voxelwise psychophysiological interaction (PPI) analysis.
+%   fmri_rsa                    - Voxelwise representational similarity analysis (RSA).
+%   fmri_isc                    - Voxelwise intersubject correlation (ISC).
+%   fmri_rv2                    - Modified RV coefficient between two multivariate datasets.
+%   fmri_dicemirror             - Mirrored Dice coefficient of a binary brain mask.
 %
 % -------------------------------------------------------------------------
 % Statistical inference
 % -------------------------------------------------------------------------
-%   fmri_cleanclusters      - Remove small/sparse clusters from thresholded map
-%   fmri_tfce               - Threshold-free cluster enhancement (TFCE)
-%   fmri_acfestimate        - Estimate spatial ACF for cluster-size correction
-%   fmri_csdist             - Generate cluster-size null distribution
-%   fmri_csthreshold        - Extract critical cluster sizes from distribution
-%   fmri_findclusters       - Finds and labels voxel clusters in a binary brain map
-%   fmri_scramblephases     - Phase-scramble a volume or time series
+%   fmri_ttest                  - Voxelwise t-test across participants.
+%   fmri_r2p                    - Converts Pearson correlation coefficient(s) to p-values.
+%   fmri_p2r                    - Correlation value needed to reach a given p-threshold.
+%   fmri_p2t                    - t-value needed to reach a given p-threshold.
+%   fmri_fisherz                - Standardised Fisher z-score from a Pearson correlation.
+%   fmri_fisherz2p              - Two-tailed p-value from a Fisher z-score.
+%   fmri_effdf                  - Estimates effective degrees of freedom for correlated time series.
+%   fmri_combinep               - Combine p-values across participants using meta-analytic methods.
+%   fmri_tfce                   - Threshold-free cluster enhancement (TFCE) of a statistical map.
+%   fmri_bwlabel                - Labels connected clusters in a 3D binary volume.
+%   fmri_findclusters           - Finds and labels connected clusters in a binary brain map.
+%   fmri_cleanclusters          - Removes small and sparse clusters from a thresholded map.
+%   fmri_acfestimate            - Estimates the spatial smoothing KERNEL of the data.
+%   fmri_csdist                 - Null cluster-size distribution from a smoothing kernel.
+%   fmri_csthreshold            - Extracts critical cluster sizes from a CS distribution.
+%   fmri_scramblephases         - Phase-scrambles a brain volume or time series.
 %
 % -------------------------------------------------------------------------
-% Simulation
+% Simulation and signal quality
 % -------------------------------------------------------------------------
-%   fmri_simdata            - Generate simulated 3D fMRI data for testing and demonstration
-%   fmri_simget             - Extract one participant from fmri_simdata output
+%   fmri_simdata                - Generates simulated 3D fMRI data for testing and demonstration.
+%   fmri_simget                 - Extracts one participant's fMRI data from fmri_simdata output.
+%   fmri_snri                   - Image-domain signal-to-noise ratio (SNR-i) for each fMRI scan.
+%   fmri_snrt                   - Temporal signal-to-noise ratio (tSNR) for each brain voxel.
+%   fmri_cnr                    - Temporal contrast-to-noise ratio (tCNR) for fMRI data.
 %
 % -------------------------------------------------------------------------
-% Quality control
+% Visualisation
 % -------------------------------------------------------------------------
-%   fmri_snri               - Image-domain SNR per scan (SNR-i)
-%   fmri_snrt               - Temporal SNR per voxel (tSNR)
-%   fmri_cnr                - Temporal contrast-to-noise ratio (tCNR)
+%   fmri_showslices             - Displays continuous brain data as a series of 2D slices.
+%   fmri_showslices_int         - Displays integer-labelled brain data as a coloured slice mosaic.
+%   fmri_showselectslices       - Displays continuous data on a user-specified set of slices.
+%   fmri_showselectslices_int   - Displays integer data on user-specified axial slices.
+%   fmri_showplanes             - Three-plane (sagittal/coronal/axial) slice view with crosshair.
+%   fmri_showcortex             - Cortical surface rendering of a statistical or continuous map.
+%   fmri_show3d                 - 3D isosurface rendering of brain activation.
+%   fmri_show3dba               - 3D rendering of a map split by Brodmann area.
+%   fmri_show3datlas            - 3D rendering of atlas regions as coloured isosurfaces.
+%   fmri_show3dhalfbrains       - Plots activation on four lateral and medial hemisphere views.
+%   fmri_braincake              - 3D layered-slice rendering of brain activation (brain cake).
+%   fmri_brainvideo             - Creates a rotating 3D brain video from a brain map.
+%   fmri_makevizpar             - Creates a visualization parameter structure with defaults.
+%   fmri_bin                    - Bins continuous brain data into a set of discrete colour bands.
+%   fmri_juicyslices            - Finds the slices carrying most of a map's signal.
+%   fmri_divmap                 - Diverging blue-white-red colormap for thresholded statistical maps.
+%   fmri_makecmap               - Builds a colormap from anchor colours and their positions.
+%   fmri_distinctcolors         - Generates N perceptually distinguishable RGB colours.
+%   fmri_createlegend           - Create a legend as an image for export.
 %
 % -------------------------------------------------------------------------
-% Visualization
+% Getting started
 % -------------------------------------------------------------------------
-%   fmri_showslices         - Continuous data: axial/sagittal/coronal mosaic
-%   fmri_showslices_int     - Integer labels: coloured slice mosaic
-%   fmri_showselectslices   - Continuous data on user-specified slices
-%   fmri_showselectslices_int - Integer data on user-specified slices
-%   fmri_showplanes         - Three-plane orthogonal view with crosshair
-%   fmri_show3d             - 3D isosurface rendering on transparent brain
-%   fmri_show3dba           - 3D rendering coloured by atlas region
-%   fmri_showcortex         - Cortical surface with continuous colormap
-%   fmri_showcortex_masked  - Cortical surface restricted to binary mask
-%   fmri_braincake          - 3D layered-slice 'brain cake' rendering
-%   fmri_show3dhalfbrains   - Four-panel lateral/medial hemisphere views
-%   fmri_brainvideo         - Render rotating 3D brain activation as a video file
-%   fmri_makevizpar         - Create parameter structure for visualisation functions
+%   demo/demo_preprocessing.m   - preprocessing chain, one participant
+%   demo/demo_glm.m             - two-level GLM, simulated cohort
+%   demo/demo_visualization.m   - every display function
+%   demo/demo_naturalistic.m    - full naturalistic-stimulus pipeline
 %
-% -------------------------------------------------------------------------
-% See also: fmritoolbox_setup, demos/demo_preprocessing.m,
-%           demos/demo_glm.m, demos/demo_visualization.m,
-%           demos/demo_naturalistic_pipeline.m
+% Generated by tools/make_contents.m - do not edit by hand.
+% Last generated: 2026-10-29
+

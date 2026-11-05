@@ -1,0 +1,53 @@
+# Citation File Format 1.2.0 — https://citation-file-format.github.io
+# GitHub renders a "Cite this repository" button from this file, and Zenodo
+# reads it when archiving a release. Keep version, date-released and doi in
+# step with conf.py and the Zenodo deposit.
+cff-version: 1.2.0
+message: "If you use this toolbox, please cite both the software and the paper."
+title: "VoxelWise Toolbox"
+abstract: >-
+  A lightweight, dependency-free MATLAB library for human fMRI analysis. All
+  brain data is held in a single fixed layout — the 228453 in-brain voxels of
+  the MNI152 2 mm template — so any of the 83 functions composes with any
+  other. Aimed particularly at continuous-feature and naturalistic paradigms.
+type: software
+authors:
+  - given-names: Iballa
+    family-names: Burunat
+    affiliation: "University of Jyväskylä"
+  - given-names: Vinoo
+    family-names: Alluri
+    affiliation: "International Institute of Information Technology, Hyderabad"
+  - given-names: Petri
+    family-names: Toiviainen
+    affiliation: "University of Jyväskylä"
+version: 1.0.0
+date-released: "2026-11-05"
+doi: 10.5281/zenodo.19173637
+license: MIT
+repository-code: "https://github.com/iburunat/VoxelWise-Toolbox"
+url: "https://voxelwisetoolbox.readthedocs.io"
+keywords:
+  - fMRI
+  - neuroimaging
+  - MATLAB
+  - naturalistic paradigms
+  - voxelwise analysis
+  - intersubject correlation
+
+preferred-citation:
+  type: article
+  title: "VoxelWise Toolbox: transparent and composable fMRI analysis in base MATLAB"
+  authors:
+    - given-names: Iballa
+      family-names: Burunat
+      affiliation: "University of Jyväskylä"
+    - given-names: Vinoo
+      family-names: Alluri
+      affiliation: "International Institute of Information Technology, Hyderabad"
+    - given-names: Petri
+      family-names: Toiviainen
+      affiliation: "University of Jyväskylä"
+  journal: "NeuroImage"
+  year: 2026
+  notes: "In preparation. Update with volume, pages and DOI on acceptance."
