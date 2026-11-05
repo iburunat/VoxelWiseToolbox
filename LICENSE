@@ -1,6 +1,7 @@
 MIT License
-Copyright (c) 2026 Iballa Burunat, Vinoo Alluri & Petri Toiviainen
-                   University of Jyväskylä
+
+Copyright (c) 2026 Iballa Burunat, Vinoo Alluri and Petri Toiviainen,
+University of Jyväskylä
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +20,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+-------------------------------------------------------------------------------
+Bundled and redistributed components are covered by their own licences:
+
+  external/NIFTI_20130306/   NIfTI/Analyze I/O routines by Jimmy Shen,
+                             BSD 2-clause licence (see that folder).
+
+  atlases/                   Brain atlases redistributed from their original
+                             authors under their respective terms; see
+                             atlases/ATLAS_LICENSES.md.
