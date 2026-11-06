@@ -18,8 +18,8 @@
   <a href="https://zenodo.org/badge/latestdoi/1188857124">
     <img src="https://zenodo.org/badge/1188857124.svg" alt="DOI">
   </a>
-  <a href="https://github.com/iburunat/VoxelWise-Toolbox/releases">
-    <img src="https://img.shields.io/github/v/release/iburunat/VoxelWise-Toolbox?include_prereleases" alt="Latest release">
+  <a href="https://github.com/iburunat/VoxelWiseToolbox/releases">
+    <img src="https://img.shields.io/github/v/release/iburunat/VoxelWiseToolbox?include_prereleases" alt="Latest release">
   </a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg" alt="Platforms">
 </p>
