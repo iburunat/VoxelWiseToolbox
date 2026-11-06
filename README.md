@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="source/_static/voxelwise-toolbox_logo.jpg" alt="VoxelWise Toolbox" height="170"/>
+  <img src="source/_static/logo.png" alt="VoxelWise Toolbox" height="170"/>
 </p>
 
 <p align="center">
