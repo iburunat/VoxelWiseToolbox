@@ -1,35 +1,110 @@
-/* Example: change primary color of RTD theme */
-.wy-side-nav-search {
-    background-color: #003366; /* University dark blue */
+/* VoxelWise Toolbox — docs theme overrides for sphinx_rtd_theme.
+ *
+ * Loaded after the theme's own stylesheet, so these rules win without
+ * !important. Every colour is defined once below; change it there, not in
+ * the rules. Values are taken from the logo so the docs, the mark and the
+ * showcase site stay one palette rather than three.
+ */
+
+:root {
+  --vw-navy:      #152652;   /* the mark's navy — headings, nav header */
+  --vw-navy-deep: #0F1C3D;   /* one step darker, for the sidebar panel */
+  --vw-orange:    #EF471E;   /* the mark's orange — accents and hover */
+  --vw-paper:     #FFFAFA;   /* the mark's background */
+  --vw-rule:      rgba(255, 255, 255, 0.14);
 }
 
-/* Sidebar background and full-height orange borders */
+/* ---- sidebar ---------------------------------------------------------- */
+
 .wy-nav-side {
-  background: #002957;           /* dark blue sidebar */
-  border-left: 3px solid #f1563f;  /* left orange line */
-  border-right: 3px solid #f1563f; /* right orange line */
-  min-height: 100vh;             /* full viewport height */
+  background: var(--vw-navy-deep);
+  /* Only the right edge is ever visible; a left border sits off-screen. */
+  border-right: 3px solid var(--vw-orange);
 }
 
-/* Optional: hover links in the sidebar */
-.wy-nav-side a {
-  color: #ffffff;  /* keep links white for contrast */
+.wy-side-nav-search {
+  background-color: var(--vw-navy);
+  border-bottom: 1px solid var(--vw-rule);
 }
 
-.wy-nav-side a:hover {
-  color: #f1563f;  /* highlight link hover in orange */
+/* The logo is the reversed lockup, which already carries the wordmark, so the
+ * theme's duplicate project name below it is redundant. */
+.wy-side-nav-search > a.icon img.logo { max-width: 86%; margin: 4px auto 10px; }
+.wy-side-nav-search .wy-dropdown > a,
+.wy-side-nav-search > a { color: var(--vw-paper); }
+
+.wy-side-nav-search input[type="text"] {
+  border-radius: 10px;
+  border-color: var(--vw-rule);
 }
 
+.wy-nav-side a:hover { color: var(--vw-orange); }
 
-.wy-side-nav-top {
-    background-color: #004488;
-}
+/* Current page: the theme gives it a pale background, so its label must stay
+ * dark. Stated explicitly so a future change to the link colour can't make it
+ * white-on-white. */
+.wy-menu-vertical li.current > a,
+.wy-menu-vertical li.toctree-l2.current > a { color: #333; }
 
+/* Section captions ("Quick Start", "Function Documentation"). */
+.wy-menu-vertical p.caption { color: var(--vw-orange); }
+
+/* Mobile header. */
+.wy-nav-top { background: var(--vw-navy); }
+.wy-nav-top a { color: var(--vw-paper); }
+
+/* ---- content ---------------------------------------------------------- */
+
+.wy-nav-content-wrap { background: var(--vw-paper); }
+.wy-nav-content { max-width: 60em; }
+
+.rst-content h1,
+.rst-content h2,
+.rst-content h3 { color: var(--vw-navy); }
+
+/* A short orange rule under page titles, echoing the mark's tick. */
 .rst-content h1 {
-    color: #0055aa;
+  border-bottom: 3px solid var(--vw-orange);
+  padding-bottom: 0.3em;
 }
 
-/* body {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    background-color: #f8f9fa;
-} */
+/* The theme appends a hidden paragraph-link to every heading. It still takes
+ * up space, so on a heading that nearly fills the line it wraps and doubles
+ * the heading's height - measured at 64px against 32px on
+ * "WHY YOU SHOULD NOT PICK A ROUND NUMBER INSTEAD". Collapsing it to zero
+ * width removes the phantom line; it reappears on hover, as before. */
+.rst-content h1 .headerlink, .rst-content h2 .headerlink,
+.rst-content h3 .headerlink, .rst-content h4 .headerlink,
+.rst-content h5 .headerlink, .rst-content h6 .headerlink {
+  display: inline-block;
+  width: 0;
+  margin-left: 0;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+.rst-content h1:hover .headerlink, .rst-content h2:hover .headerlink,
+.rst-content h3:hover .headerlink, .rst-content h4:hover .headerlink,
+.rst-content h5:hover .headerlink, .rst-content h6:hover .headerlink {
+  width: auto;
+  margin-left: 0.4em;
+  overflow: visible;
+}
+
+.rst-content a { color: var(--vw-navy); text-decoration: underline; }
+.rst-content a:hover { color: var(--vw-orange); }
+
+/* Function signatures and inline names carry most of this site's meaning. */
+.rst-content code.literal {
+  color: var(--vw-navy);
+  background: #fff;
+  border-color: #e6ddd9;
+}
+
+.rst-content div[class^="highlight"] {
+  border-color: #e6ddd9;
+  border-left: 3px solid var(--vw-navy);
+}
+
+.rst-content .note { background: #f3f6fb; }
+.rst-content .note .admonition-title { background: var(--vw-navy); }
+.rst-content .warning .admonition-title { background: var(--vw-orange); }
