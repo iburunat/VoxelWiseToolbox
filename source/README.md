@@ -80,16 +80,3 @@ does not replace the live site: Read the Docs keeps serving the last good one.
 
 There is no Makefile. Read the Docs would ignore one anyway; these two commands
 are the whole build.
-
-## One-time Read the Docs setup
-
-1. GitHub repo renamed to `VoxelWise-Toolbox`. Renaming keeps the repository's
-   numeric id, so the Zenodo link and its concept DOI survive the rename.
-2. In Read the Docs, import the renamed repo with the slug `voxelwisetoolbox`,
-   so it serves at `voxelwisetoolbox.readthedocs.io`.
-3. Keep the old `jy-fmritoolbox` project and add an exact redirect from `/` to
-   the new URL, so existing links and any citation of the old address keep
-   working. Deleting it frees the slug and breaks them.
-4. Check `.readthedocs.yaml` has its leading dot. Named `readthedocs.yaml`, it
-   is silently ignored: RTD falls back to defaults and builds without the
-   pinned requirements and without `fail_on_warning`.
