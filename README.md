@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://voxelwisetoolbox.readthedocs.io/en/latest/">
-    <img src="https://readthedocs.org/projects/voxelwisetoolbox/badge/?version=latest" alt="Documentation status">
+    <img src="https://app.readthedocs.org/projects/voxelwisetoolbox/badge/?version=latest" alt="Documentation status">
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-orange.svg" alt="MIT licence">
