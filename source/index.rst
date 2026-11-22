@@ -19,7 +19,7 @@ assumptions of conventional designs do not hold.
 .. figure:: _static/toolbox_schematic.*
    :align: center
    :width: 100%
-   :alt: One data layout shared by eighty-three functions in eight modules
+   :alt: One data layout shared by eighty-four functions in eight modules
 
    Every function reads and writes the same layout, so the modules below can
    be combined in any order.
@@ -37,7 +37,7 @@ assumptions of conventional designs do not hold.
    :width: 100%
    :alt: Layered slice rendering of a thresholded map, shown through a glass brain
 
-   Drawn by :doc:`modules/fmri_braincake`, one of nineteen display functions,
+   Drawn by :doc:`modules/fmri_braincake`, one of twenty display functions,
    all of which take the same ``228453 x 1`` vector the analysis functions
    return.
 
@@ -50,7 +50,7 @@ At a glance
 ===========
 
 ================================  ==========================================
-83 public functions               eight composable modules
+84 public functions               eight composable modules
 19 atlas maps                     from ten published sources
 0 compiled files                  base MATLAB R2019a or later
 no MathWorks toolboxes            no SPM
@@ -86,7 +86,7 @@ Toolbox: transparent and composable fMRI analysis in base MATLAB.*
 Additional resources
 ====================
 
-- Project site: `voxelwise-toolbox <https://voxelwise-toolbox.readthedocs.io>`_
-- Source code: `VoxelWise-Toolbox on GitHub <https://github.com/iburunat/VoxelWise-Toolbox>`_
+- Project site: `voxelwisetoolbox <https://voxelwisetoolbox.readthedocs.io>`_
+- Source code: `VoxelWiseToolbox on GitHub <https://github.com/iburunat/VoxelWiseToolbox>`_
 - Licence: `MIT <https://opensource.org/licenses/MIT>`_
 - Developed at the `University of Jyväskylä <https://www.jyu.fi/en>`_
