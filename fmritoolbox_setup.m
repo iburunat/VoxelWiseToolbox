@@ -6,7 +6,7 @@
 % Usage:
 %   Run this script from the VoxelWise Toolbox root directory, or provide the
 %   full path:
-%       run('/path/to/VoxelWise-Toolbox/fmritoolbox_setup.m')
+%       run('/path/to/VoxelWiseToolbox/fmritoolbox_setup.m')
 %
 % Requirements:
 %   - MATLAB R2019a or later. R2019a is the release in which xcorr, used by
@@ -25,8 +25,6 @@ toolbox_root = fileparts(mfilename('fullpath'));
 if isempty(toolbox_root)
     toolbox_root = pwd;
 end
-
-% ── Toolbox root ─────────────────────────────────────────────────────────
 addpath(toolbox_root);
 
 % ── core (all public fmri_*.m functions) ─────────────────────────────────
@@ -64,38 +62,39 @@ else
 end
 
 % ── masks (brain masks, rendering meshes) ──────────────────────────────
-mat_path = fullfile(toolbox_root, 'masks');
-if exist(mat_path, 'dir')
-    addpath(mat_path);
+masks_path = fullfile(toolbox_root, 'masks');
+if exist(masks_path, 'dir')
+    addpath(masks_path);
 end
 
-% ── Demos  ──────────────────────────────────────────────────────────────
-demo_path = '';
-for cand = {'demo', 'demos'}
-    p = fullfile(toolbox_root, cand{1});
-    if exist(p, 'dir'), demo_path = p; break, end
-end
-if ~isempty(demo_path)
+% ── Demos ─────────────────────────────────────────────────────────────────
+demo_path = fullfile(toolbox_root, 'demo');
+if isfolder(demo_path)
     addpath(demo_path);
+    sf_path = fullfile(demo_path, 'studyforrest');
+    if isfolder(sf_path), addpath(sf_path); end
 else
+    demo_path = '';
     warning('fmritoolbox_setup:noDemos', ...
-        ['No demo folder found at:\n  %s\n  %s\n' ...
-         'The toolbox will work, but the demo scripts will not be on the path.'], ...
-        fullfile(toolbox_root, 'demo'), fullfile(toolbox_root, 'demos'));
+        ['demo/ not found at:\n  %s\n' ...
+         'The toolbox will work, but the demo scripts will not be on the ' ...
+         'path.'], fullfile(toolbox_root, 'demo'));
 end
 
-sf_path = fullfile(demo_path, 'studyforrest');
-if isfolder(sf_path), addpath(sf_path); end
+if ~isempty(demo_path)
+    sf_path = fullfile(demo_path, 'studyforrest');
+    if isfolder(sf_path), addpath(sf_path); end
+end
     
 % ── Atlases  ──────────────────────────────────────────────────────────────
-ex_path = fullfile(toolbox_root, 'atlases');
-if exist(ex_path, 'dir')
-    addpath(ex_path);
+atlas_path = fullfile(toolbox_root, 'atlases');
+if exist(atlas_path, 'dir')
+    addpath(atlas_path);
 end
 
 % ── private folder sanity check ──────────────────────────────────────────
-% If core/private has been added to the path - usually by someone running
-% addpath(genpath(...)) - MATLAB will warn and the internal helpers become
+% If core/private has been added to the path (usually by someone running
+% addpath(genpath(...))) MATLAB will warn and the internal helpers become
 % globally visible, which defeats the point of hiding them. Detect and undo it.
 priv_path = fullfile(toolbox_root, 'core', 'private');
 if exist(priv_path, 'dir') && contains(path, priv_path)
@@ -108,10 +107,10 @@ if exist(priv_path, 'dir') && contains(path, priv_path)
 end
 
 % ── NIfTI library check ──────────────────────────────────────────────────
-% fmri_checknifti verifies that the bundled, patched external/NIFTI_20130306 is
-% present and has not been replaced by an unpatched copy. It is called after 
-% core/ is on the path, since that is where it lives, and it is read-only: 
-% it modifies nothing and returns silently when all is well.
+% fmri_checknifti verifies that the bundled, patched NIfTI library is present
+% and has not been replaced by an unpatched copy. Run it after adding core/ 
+% to the path, because that is where the function is located. It returns 
+% silently when all checks pass and does not modify any files.
 if exist('fmri_checknifti', 'file') == 2
     fmri_checknifti();
 end
@@ -127,5 +126,5 @@ end
 % ── Done ──────────────────────────────────────────────────────────────────
 fprintf('\nVoxelWise Toolbox loaded from: %s\n', toolbox_root);
 fprintf('Run ''help fmri_readnii'' to get started.\n');
-fprintf('Open demo/demo_preprocessing.m for a guided walkthrough.\n');
-clear toolbox_root core_path nifti_path mat_path demo_path ex_path priv_path p cand
+fprintf('Open demo/demo_preprocessing.m for a guided walkthrough.\n\n');
+clear toolbox_root core_path nifti_path masks_path demo_path atlas_path priv_path tools_path sf_path

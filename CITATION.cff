@@ -8,7 +8,7 @@ title: "VoxelWise Toolbox"
 abstract: >-
   A lightweight, dependency-free MATLAB library for human fMRI analysis. All
   brain data is held in a single fixed layout — the 228453 in-brain voxels of
-  the MNI152 2 mm template — so any of the 83 functions composes with any
+  the MNI152 2 mm template — so any of the 84 functions composes with any
   other. Aimed particularly at continuous-feature and naturalistic paradigms.
 type: software
 authors:
@@ -25,7 +25,7 @@ version: 1.0.0
 date-released: "2026-11-05"
 doi: 10.5281/zenodo.19173637
 license: MIT
-repository-code: "https://github.com/iburunat/VoxelWise-Toolbox"
+repository-code: "https://github.com/iburunat/VoxelWiseToolbox"
 url: "https://voxelwisetoolbox.readthedocs.io"
 keywords:
   - fMRI
