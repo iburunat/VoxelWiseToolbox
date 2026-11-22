@@ -89,7 +89,7 @@ disp(fmri_regionnumber(fmri_ind2sub(peak)))
 
 ## Toolbox modules
 
-83 public functions in eight composable modules. The authoritative list is
+84 public functions in eight composable modules. The authoritative list is
 `Contents.m` at the repository root, generated from the function headers
 themselves; the same content is browsable as the
 [function reference](https://voxelwisetoolbox.readthedocs.io/en/latest/modules/index.html).
