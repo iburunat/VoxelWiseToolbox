@@ -45,11 +45,9 @@ else
 
     fprintf('\n=== Atlas %d: %s ===\n', atlases.ID(idx), atlases.Name{idx});
 
-    % Region count is taken from the label list itself rather than the metadata
-    % column, so the display cannot silently truncate if the two disagree.
-    % fmri_loadatlas returns char labels for every atlas, including Craddock
-    % (whose labels are the region numbers as text), so no special case is
-    % needed here.
+    % Region count is taken from the label (not from the metadata) so the
+    % display cannot silently truncate if the two disagree.
+    % fmri_loadatlas returns char labels for every atlas.
     [ROI_nos, ROI_labels] = fmri_loadatlas(atlas);
     regions = ROI_labels;
 
