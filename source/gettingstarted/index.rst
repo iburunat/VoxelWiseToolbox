@@ -88,4 +88,4 @@ Where to go next
 - :doc:`../demos/index` — worked examples that ship with the toolbox.
   ``demo_preprocessing`` is the guided walkthrough; ``demo_naturalistic`` is
   the full pipeline.
-- :doc:`../modules/index` — all 83 functions, grouped as in ``Contents.m``.
+- :doc:`../modules/index` — all 84 functions, grouped as in ``Contents.m``.
