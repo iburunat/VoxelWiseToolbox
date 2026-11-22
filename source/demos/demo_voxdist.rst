@@ -1,8 +1,10 @@
 demo_voxdist
 ============
 
-DEMO_VOXDIST  Euclidean distance between brain voxels
------------------------------------------------------
+% DEMO_VOXDIST  Euclidean distance between brain voxels
+
+Description
+-----------
 
 **Demonstrates fmri_voxdist by computing:**
 

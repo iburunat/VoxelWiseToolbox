@@ -1,10 +1,12 @@
 demo_wiener
 ===========
 
-DEMO_WIENER  Wiener deconvolution of a simulated BOLD signal
-------------------------------------------------------------
+% DEMO_WIENER  Wiener deconvolution of a simulated BOLD signal
 
-Builds a known neural signal, convolves it with the canonical HRF to make a synthetic BOLD response, then recovers the neural signal with fmri_wiener and compares the result against the ground truth.
+Description
+-----------
+
+Builds a known neural signal, convolves it with the HRF to make a synthetic BOLD response, then recovers the neural signal with fmri_wiener and compares the result against the ground truth.
 
 **The demo is in two parts:**
 

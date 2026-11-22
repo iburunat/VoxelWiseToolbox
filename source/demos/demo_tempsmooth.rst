@@ -1,8 +1,10 @@
 demo_tempsmooth
 ===============
 
-DEMO_TEMPSMOOTH  Temporal Gaussian smoothing of fMRI time series
-----------------------------------------------------------------
+% DEMO_TEMPSMOOTH  Temporal Gaussian smoothing of fMRI time series
+
+Description
+-----------
 
 Demonstrates fmri_tempsmooth by applying temporal smoothing to a simulated fMRI time series with different sigma values and comparing the effect on signal quality and frequency content.
 

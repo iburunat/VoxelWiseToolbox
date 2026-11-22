@@ -1,29 +1,22 @@
 demo_glm
 ========
 
-% DEMO_GLM  Two-level analysis on simulated fMRI data
+% DEMO_GLM  Two-level fMRI analysis with a single task regressor
 
 Description
 -----------
 
-The shortest complete path from simulated data to a thresholded, labelled group map: simulate a cohort, correlate a regressor with every voxel for each participant, test those maps across participants, clean the result and label it anatomically.
+Demonstrates a two-level analysis of simulated fMRI data. A voxelwise correlation map is calculated for each participant and then tested across participants. The recovered group map is compared with the expected signal.
 
-WHAT THIS DEMO IS FOR
----------------------
-
-Learning the two-level workflow and the toolbox's calling conventions. It answers three questions: what happens at the first level, what happens at the second, and whether the result matches the signal that was planted.
-
-It is NOT a corrected analysis. The surviving clusters come from an uncorrected voxel threshold (p < 0.001) plus a fixed minimum extent. For the correction methods see demo_csizeestimation (Ledberg cluster extent) and demo_tfce (threshold-free cluster enhancement). For quantitative recovery scoring - precision, recall, source leakage - see validate_glm_recovery.
+This introductory demo uses an uncorrected voxel threshold of p < 0.001 and a fixed 20-voxel extent. See demo_csizeestimation and demo_tfce for multiple-comparison methods.
 
 **Steps:**
 
-1. Simulate a 20-participant cohort        fmri_simdata
-2. First level: one map per participant    fmri_corregressor
-3. Second level: group t-test              fmri_ttest
-4. Threshold and clean clusters            fmri_cleanclusters
-5. Label regions and compare with truth    fmri_regiontable
-
-Self-contained: it simulates its own data and needs no scanner data and nothing beyond base MATLAB.
+1. Simulate a 20-participant cohort                           fmri_simdata
+2. First level: correlate the task regressor with each voxel  fmri_corregressor
+3. Second level: test the participant maps at group level     fmri_ttest
+4. Threshold the result and remove small clusters             fmri_cleanclusters
+5. Label the surviving clusters and compare with truth        fmri_regiontable
 
 See Also
 --------

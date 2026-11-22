@@ -1,8 +1,10 @@
 demo_csizeestimation
 ====================
 
-DEMO_CSIZEESTIMATION  Cluster-size correction by the Ledberg method
--------------------------------------------------------------------
+% DEMO_CSIZEESTIMATION  Cluster-size correction by the Ledberg method
+
+Description
+-----------
 
 Demonstrates the cluster-extent correction of Ledberg et al. (1998) in four steps:
 
@@ -17,7 +19,15 @@ The size a chance cluster can reach depends on how spatially smooth the data is,
 
 fmri_acfestimate, fmri_csdist, fmri_csthreshold, fmri_cleanclusters
 
-RUNTIME AND MEMORY. fmri_acfestimate reads participants from disk, so this demo writes temporary files and removes them at the end. Simulating one participant allocates the full 91x109x91xT grid before masking, which at T = 100 is about 720 MB in memory for roughly 180 MB on disk. Step 2 is the slow one - it convolves and cluster-labels a whole volume per null map, and reports its own progress and ETA. Every setting below is small; real use needs far more permutations at each stage.
+**Runtime and memory:**
+
+.. code-block:: matlab
+
+   The demo writes temporary participant files and removes them at the end.
+   Each simulated participant requires about 720 MB during generation and
+   about 180 MB on disk. Building the null distribution is the slowest step.
+   The permutation counts are kept low for speed; use substantially more for
+   final inference.
 
 References
 ----------

@@ -17,3 +17,4 @@ those based on simulated data need no scanner data at all.
    demo_voxdist
    demo_wiener
    demo_xcorr
+   demo_studyforrest

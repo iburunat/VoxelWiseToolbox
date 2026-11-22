@@ -1,26 +1,30 @@
 demo_preprocessing
 ==================
 
-% DEMO_PREPROCESSING  The temporal preprocessing chain, in order
+% DEMO_PREPROCESSING  The temporal preprocessing pipeline
 
 Description
 -----------
 
-Simulates one participant and applies each temporal preprocessing step in sequence. The task regressor is detrended, filtered, and smoothed to match the processed data before the correlation map is computed and saved.
+Simulates one participant and applies each temporal preprocessing step in sequence. The task regressor receives the corresponding temporal operations before the voxelwise correlation map is calculated.
 
 **Steps:**
 
-1. Simulate data                     fmri_simdata / fmri_simget
-2. Detrend (remove scanner drift)    fmri_detrend
-3. Regress motion parameters         fmri_correctmovement
-4. Band-pass filter                  fmri_bandpassfilter
-5. Apply temporal smoothing          fmri_tempsmooth
-6. Apply voxelwise z-scoring         fmri_zscorevoldata
-7. Process the regressor, correlate, save and display
+1. Simulate data                       fmri_simdata / fmri_simget
+2. Regress motion parameters           fmri_correctmovement
+3. Detrend (remove scanner drift)      fmri_detrend
+4. Apply band-pass filtering           fmri_bandpassfilter
+5. Apply temporal smoothing            fmri_tempsmooth
+6. Standardise each voxel time series  fmri_zscorevoldata
+7. Match the regressor to the data     fmri_correctmovement, fmri_detrend fmri_bandpassfilter, fmri_tempsmooth
+8. Correlate with the data             fmri_corregressor
+9. Display the correlation map         fmri_showslices
 
-Signal quality is reported alongside the chain with fmri_snrt and fmri_cnr.
+This sequence demonstrates the individual preprocessing functions. In a formal analysis, motion, drift and temporal filtering should be handled consistently within the statistical model.
 
-Two files are written to the current folder: demo_motion_params.txt and demo_data.mat.
+Voxelwise CNR is reported after preprocessing as a signal-quality summary.
+
+The demo writes demo_motion_params.txt and demo_data.mat to the current folder. The MAT file contains the regressors, correlation map and run metadata, but not the full preprocessed dataset.
 
 This demo and demo_glm are independent and can be run in either order. demo_glm simulates its own 20-participant dataset and does not load this demo's output.
 
