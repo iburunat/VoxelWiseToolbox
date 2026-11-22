@@ -83,10 +83,15 @@ If you use the toolbox, please cite the paper and the archived release.
 Burunat, I., Alluri, V. & Toiviainen, P. (in preparation, 2026). *VoxelWise
 Toolbox: transparent and composable fMRI analysis in base MATLAB.*
 
+Burunat, I., Alluri, V. & Toiviainen, P. (2026). *VoxelWise Toolbox* (v1.0.0).
+Zenodo. https://doi.org/10.5281/zenodo.19173637
+
 Additional resources
 ====================
 
-- Project site: `voxelwisetoolbox <https://voxelwisetoolbox.readthedocs.io>`_
+- Project page: `VoxelWise Toolbox at the University of Jyväskylä
+  <https://www.jyu.fi/hytk/fi/laitokset/mutku/en/research/materials/voxelwisetoolbox>`_
 - Source code: `VoxelWiseToolbox on GitHub <https://github.com/iburunat/VoxelWiseToolbox>`_
+- Archived release: `10.5281/zenodo.19173637 <https://doi.org/10.5281/zenodo.19173637>`_
 - Licence: `MIT <https://opensource.org/licenses/MIT>`_
 - Developed at the `University of Jyväskylä <https://www.jyu.fi/en>`_
