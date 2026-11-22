@@ -26,6 +26,7 @@ Inputs
 - **'ColorSwatchSize'** -- Swatch half-height in axis units. Default: 0.3.
 - **'FigureSize'** -- [width height] in pixels. Default: sized automatically from the number and length of the labels. Passing a value overrides that.
 - **'Padding'** -- Margin around the legend in pixels. Default: 10.
+- **'Axes'** -- Existing axes to draw into. Default: [], which opens a figure and returns the legend as an image. When given, the legend is drawn in that axes, no figure is opened, and LEGEND_IMG is returned empty. This is how the viewers place a key beside a label map.
 
 Outputs
 -------
@@ -52,5 +53,5 @@ A figure window is opened to display the result. When generating legends in a lo
 See Also
 --------
 
-:doc:`fmri_distinctcolors <fmri_distinctcolors>` · :doc:`fmri_show3dba <fmri_show3dba>` · :doc:`fmri_show3datlas <fmri_show3datlas>` · :doc:`fmri_showslices_int <fmri_showslices_int>`
+:doc:`fmri_distinctcolors <fmri_distinctcolors>` · :doc:`fmri_show3dba <fmri_show3dba>` · :doc:`fmri_show3datlas <fmri_show3datlas>` · :doc:`fmri_showslices_int <fmri_showslices_int>` · :doc:`fmri_colorbar <fmri_colorbar>`
 

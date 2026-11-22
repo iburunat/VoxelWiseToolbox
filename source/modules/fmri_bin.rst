@@ -28,7 +28,7 @@ Inputs
 Outputs
 -------
 
-- **BINDATA** -- Binary matrix (228453 x NBINS). Column k is 1 where data >= bin_k threshold.
+- **BINDATA** -- Binary matrix (228453 x NBINS). Column k is 1 for voxels whose value falls in bin k. The bins are disjoint, so a voxel appears in exactly one column.
 - **BINCMAP** -- RGB colour matrix (NBINS x 3), one row per bin.
 
 Examples

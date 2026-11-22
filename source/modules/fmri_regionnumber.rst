@@ -6,7 +6,7 @@ Looks up atlas ROI name and number for voxel coordinates.
 Description
 -----------
 
-Return region name(s) and number(s) for voxel coordinate(s) For each voxel location (subscript space), returns the name and index of the atlas region that contains it. Handles single or multiple coordinates.
+Return region name(s) and number(s) for voxel coordinate(s) For each voxel location (subscript space), returns the name and index of the atlas region that contains it. Handles single or multiple coordinates. For a single coordinate, LIST_OF_REGIONS is returned as a character vector. For multiple coordinates, it is returned as an N x 1 cell array.
 
 Usage
 -----

@@ -16,9 +16,9 @@ Estimates the effective degrees of freedom (df) for the correlation between two 
 
 where AC1 and AC2 are the normalised autocorrelation functions of ts1 and ts2 respectively, evaluated up to lag N/5.
 
-The maximal lag follows Pyper & Peterman (1998). Their simulations used N/4 as a baseline but concluded that N/5 gave "the best combination of accuracy and precision" in error rates, which is their stated recommendation and what Alluri et al. (2012) implement. Simulation here reproduces that: across AR(0) to AR(0.9) the mean estimate is unchanged (within 0.2%) while the standard deviation is consistently lower.
+Maximum autocorrelation lag: Following Pyper & Peterman (1998), the autocorrelation is evaluated up to lag N/5. Although their simulations considered N/4, they recommended N/5 as providing the best balance between accuracy and precision. Alluri et al. (2012) use the same limit.
 
-Note on the test statistic. Pyper & Peterman pair this df estimate with a t-test on r using N\*-2 degrees of freedom. The toolbox instead follows Alluri et al., who use the same df estimate inside a Fisher z framework: z = atanh(r)\*sqrt(df-3), tested against the standard normal (see fmri_fisherz and fmri_r2p). Both are standard tests for a correlation; the Fisher form is variance-stabilising and averages sensibly across participants, which suits voxelwise maps. The df estimate itself is unchanged from Pyper & Peterman.
+We independently tested this choice using simulated AR processes (AR(0) to AR(0.9)), comparing N/5 and N/4. The two limits produced virtually identical mean effective df estimates (difference < 0.2%), while N/5 consistently gave lower variability across simulations.
 
 Usage
 -----

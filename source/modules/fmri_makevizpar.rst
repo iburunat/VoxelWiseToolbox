@@ -19,7 +19,7 @@ Usage
 Inputs
 ------
 
-- Name-value pairs overriding any field below. An unrecognised name warns and is ignored. An odd number of arguments is an error - note there is NO leading function-name argument; earlier versions took one and the struct is now flat.
+- Name-value pairs overriding any field below. An unrecognised name warns and is ignored. An odd number of arguments is an error - note there is NO leading function-name argument.
 
 Outputs
 -------
@@ -27,7 +27,7 @@ Outputs
 - Shared across viewers:
 - **P.AZ** -- Azimuth angle (degrees). Default: 40
 - **P.EL** -- Elevation angle (degrees). Default: 15
-- **P.LABELS** -- Legend labels, one per map, as a cell array of char. Default: {} (no legend). Used by fmri_show3d when DATA holds several maps as columns: one label per column, in the same order.
+- **P.LABELS** -- Legend labels, one per map, as a cell array of char. Default: {} (no legend). Used by fmri_show3d, fmri_showslices_int and fmri_showselectslices_int when DATA holds several maps as columns: one label per column, in the same order.
 - **P.CLIMITS** -- Colour axis limits [min max]. Default: [] (auto-scale)
 - **P.THRESHOLD** -- Display threshold, slice viewers. Default: [] (legacy rule)
 - **P.CMAP** -- N x 3 RGB colormap. Default: fmri_divmap(256)
@@ -39,11 +39,11 @@ Outputs
 - **P.CROP** -- Bounding box. Default: [1 91 1 109 1 91] (full brain)
 - **P.GREYPAR** -- Depth shading, 0=flat to 1=strong. Default: 0.4
 - **P.TXT** -- Show slice index on each tile (0/1). Default: 1
-- **P.LEVEL** -- Isosurface threshold, fraction of max. Default: 0.9
+- **P.LEVEL** -- Isosurface value (see fmri_show3d). Default: 0.1
 - **P.SURFALPHA** -- Activation surface opacity (0-1). Default: 1
 - **P.PLANE** -- 1=axial, 2=sagittal, 3=coronal. Default: 1. Not every viewer accepts all three. fmri_braincake implements all of them. fmri_showslices and fmri_showslices_int are axial and sagittal only and raise an error on 3. The fmri_showselectslices pair takes explicit slice indices, is axial only, and ignores this field. fmri_showplanes draws all three planes at once and reads P.COORD instead.
 - **P.INTERVAL** -- Voxel spacing between slices (1 or 2). Default: 2
-- **P.SLICES** -- Slice indices, e.g. [20 30 40 50]. Default: [] (you must set this; there is no sensible default)
+- **P.SLICES** -- Slice indices, e.g. [30 40 50]. Default: [20 30 40].
 - **P.SURFMATERIAL** -- 'metal' (default), 'dull' or 'shiny'
 
 THREE OPACITIES, AND WHICH IS WHICH P.MASKALPHA      the transparent brain shell behind everything, 3D views P.OVERLAYALPHA   the statistical overlay on a slice, 2D views P.SURFALPHA      the activation isosurface itself, 3D views

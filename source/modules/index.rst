@@ -143,4 +143,5 @@ Visualisation
    fmri_makecmap
    fmri_distinctcolors
    fmri_createlegend
+   fmri_colorbar
 

@@ -6,9 +6,9 @@ Converts MNI152 coordinates to Talairach space.
 Description
 -----------
 
-Transforms a 3D coordinate from MNI space to Talairach space using the linear mni2tal approximation of the Talairach Daemon (Lancaster et al., 2000). This is useful when comparing results with older literature reported in Talairach coordinates.
+Converts MNI coordinates to Talairach coordinates using the affine MNI-to-Talairach transform tabulated by the MRC CBU (aff_mni2tal, attributed to Meyer-Lindenberg), fitted between the SPM95/96 MNI templates and Talairach 88. This can be useful when comparing results with studies that report coordinates in Talairach space.
 
-This is the simple single-matrix linear transform, not the later piecewise (Brett) or best-fit affine (Lancaster et al., 2007, "icbm2tal") transforms. It is an approximation: expect a few millimetres of disagreement with the 2007 affine, largest away from the AC. For coordinate-reporting where the 2007 fit matters, use the icbm2tal transform instead.
+This is an approximate single-matrix transform. It differs from the Brett piecewise transform and the later icbm2tal affine transform (Lancaster et al., 2007), which are not implemented here. Those are separate transforms for data normalised using SPM2 or FSL/FLIRT; neither was derived for nonlinear normalisation, and selecting the appropriate one requires knowing the original normalisation route.
 
 The transform is: tal = A \* mni + B
 
@@ -54,7 +54,8 @@ Accepts a 3-element row or column vector (mni(:) is applied internally); the out
 References
 ----------
 
-- Lancaster, J.L. et al. (2000). Automated Talairach atlas labels for functional brain mapping. Human Brain Mapping, 10(3), 120-131. (The 2007 "icbm2tal" affine — Lancaster et al., Hum Brain Mapp 28:1194 — is a different, more accurate transform not implemented here.)
+- MRC Cognition and Brain Sciences Unit, MNI / Talairach coordinates (aff_mni2tal.m): https://imaging.mrc-cbu.cam.ac.uk/imaging/MniTalairach
+- Lancaster, J.L. et al. (2007). Bias between MNI and Talairach coordinates analyzed using the ICBM-152 brain template. Human Brain Mapping, 28(11), 1194-1205. The "icbm2tal" affine given there is more accurate and is not implemented here.
 
 See Also
 --------

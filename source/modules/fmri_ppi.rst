@@ -38,26 +38,32 @@ Outputs
 
 The two main effects are included as nuisance terms so that BETA_PPI reflects connectivity change attributable to the interaction, over and above seed activity and task activation on their own. Omitting them makes the interaction term absorb both, and the result is not a PPI.
 
-A METHODOLOGICAL LIMITATION, STATED PLAINLY
+METHODOLOGICAL NOTE
+-------------------
 
-The interaction is formed in the BOLD domain, as in the original Friston formulation: the measured seed time series is multiplied by the convolved psychological regressor. Gitelman et al. (2003) showed this is biased, because the interaction is a NEURAL event and convolution does not commute with multiplication:
+This function forms the interaction in the BOLD domain by multiplying the measured seed time series by the HRF-convolved psychological regressor. This follows the original PPI formulation but does not explicitly model the underlying neural interaction. Because convolution and multiplication are not interchangeable:
 
 .. code-block:: matlab
 
-   conv(neural_seed .* psych, hrf)  ~=  conv(neural_seed, hrf) .* psych
+   conv(neural_seed .* psych, hrf) ~= ...
 
-The stricter approach deconvolves the seed to the neural domain, forms the interaction there, and reconvolves. This toolbox ships fmri_wiener for the deconvolution step, so that route is available:
+.. code-block:: matlab
+
+   conv(neural_seed, hrf) .* conv(psych, hrf)
+
+an alternative approach is to deconvolve the seed time series, form the interaction in the neural domain, and reconvolve it with the HRF (Gitelman et al., 2003). The deconvolution step can be performed with fmri_wiener:
 
 .. code-block:: matlab
 
    seed_neural = fmri_wiener(seed_ts, hrf, reg);
    interaction = conv(seed_neural .* psych_neural, hrf);
 
-The BOLD-domain form is retained here because it remains the most widely reported version and is adequate for block designs with long blocks, where the two forms converge. For event-related or fast naturalistic designs the difference matters, and the deconvolved route should be preferred.
+The difference between these approaches may be particularly relevant for event-related and rapidly varying designs. Interpret results with regard to the PPI formulation used.
 
-A NOTE ON BETA_SEED
+NOTE ON BETA_SEED
+-----------------
 
-The seed regressor is the MEAN over seed voxels, so it carries measurement error. A regressor measured with error has its coefficient attenuated toward zero (regression dilution), so BETA_SEED systematically underestimates the true seed coupling - by about 5% in a smoke test with 10 seed voxels at modest noise. This is inherent to seed-based methods, not specific to this implementation. Larger and cleaner seeds reduce it. BETA_PPI is much less affected, because the interaction term's error is second order.
+BETA_SEED estimates the association between each voxel and the mean seed time series after accounting for the psychological and interaction terms. Noise in the estimated seed time series may attenuate this coefficient. Using a sufficiently large, anatomically appropriate seed with reliable signal can reduce this problem.
 
 GROUP INFERENCE
 ---------------

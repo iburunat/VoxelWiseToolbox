@@ -1,12 +1,12 @@
 fmri_partcorr
 =============
 
-Voxelwise partial correlation with confounds removed.
+Computes voxelwise partial correlations controlling for confounds.
 
 Description
 -----------
 
-Computes the partial correlation between a brain map Y and a regressor x, controlling for one or more confound variables Z, at every voxel. The observations are usually participants, which makes this a second-level analysis; they can equally be time points, for a first-level use.
+At each voxel, correlates the brain data Y with the regressor x after removing the effects of one or more confound variables Z. Observations may be participants in a second-level analysis or time points in a first-level analysis.
 
 **The partial correlation is obtained by:**
 
@@ -47,14 +47,14 @@ Examples
 Notes
 -----
 
-All inputs are z-scored internally. Y, x and Z must agree on the number of OBSERVATIONS - which for Y is whichever of its two dimensions is not 228453, since either orientation is accepted.
+All inputs are z-scored internally. Y, x and Z must contain the same number of observations. In Y, observations correspond to the dimension other than the 228453-voxel dimension.
 
-For significance testing, pass RHO to fmri_r2p. fmri_r2p expects an EFFECTIVE SAMPLE SIZE (it applies the Fisher sqrt(df-3) internally), so controlling q = size(Z,2) nuisance regressors means reducing that sample size by q. With N observations:
+To obtain p-values, pass RHO and the adjusted sample size to fmri_r2p. Subtract one for each confound in Z:
 
-- **p = fmri_r2p(rho, N** -- size(Z,2));                  % independent
-- **p = fmri_r2p(rho, fmri_effdf(x, x)** -- size(Z,2));   % autocorrelated
+- **p = fmri_r2p(rho, N** -- size(Z,2));                  % independent observations
+- **p = fmri_r2p(rho, fmri_effdf(x,x)** -- size(Z,2));    % autocorrelated time points
 
-The second form is for a FIRST-level use, where the observations are time points. At the second level the observations are participants and are independent, so the first form applies (Section 6.2 of the paper makes the same point about the group t-test). Do NOT subtract an extra 2: that would double-count, since fmri_r2p already accounts for the estimated correlation via sqrt(df-3).
+Use the first form for independent observations, such as participants in a group analysis, and the second for autocorrelated time-series data. Do not subtract an additional 2, because fmri_r2p already applies the Fisher correction using sqrt(df-3).
 
 See Also
 --------

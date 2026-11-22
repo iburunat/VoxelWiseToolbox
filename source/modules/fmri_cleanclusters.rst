@@ -6,10 +6,7 @@ Removes small and sparse clusters from a thresholded map.
 Description
 -----------
 
-Applies two criteria to discard unreliable clusters from a binary brain map:
-
-1. Cluster size: removes clusters smaller than CL_SIZE_THRES voxels.
-2. Neighbour density: within surviving clusters, removes voxels with fewer than NN_THRES neighbours (eliminates isolated or spikey voxels).
+Discards clusters smaller than CL_SIZE_THRES voxels, then optionally removes voxels with too few neighbours inside their own cluster, which strips off isolated or spiky voxels.
 
 Usage
 -----
@@ -23,20 +20,18 @@ Inputs
 ------
 
 - **PMAP** -- Thresholded binary brain map, vectorized (228453 x 1) or volume (91 x 109 x 91).
-- **CL_SIZE_THRES** -- Minimum cluster size in voxels. Clusters smaller than this are removed entirely. Use fmri_csthreshold to obtain a statistically motivated value.
-- **NN_THRES** -- Minimum number of neighbours a voxel must have to be retained (range 0-26). Default: 0 (disabled). A voxel with n neighbours inside its own cluster is kept when n >= NN_THRES. Neighbours are counted within the cluster only, so a voxel adjacent to a different cluster does not gain credit for it.
-- **CONN** -- Connectivity criterion for cluster detection: 6  = face connectivity (most conservative) 18  = face + edge connectivity (default) 26  = face + edge + corner connectivity (most liberal) Default: 18.
+- **CL_SIZE_THRES** -- Minimum cluster size in voxels. Use fmri_csthreshold for a statistically motivated value.
+- **NN_THRES** -- Minimum neighbours a voxel must have to be kept (0-26). Default: 0 (disabled). Neighbours are counted within the voxel's own cluster, so touching another cluster does not count.
+- **CONN** -- Connectivity for cluster detection: 6 (face), 18 (face + edge, default) or 26 (face + edge + corner).
 
 Outputs
 -------
 
-- **NEWPMAP** -- Cleaned binary map, same format as PMAP input.
+- **NEWPMAP** -- Cleaned binary map, same format as PMAP.
 
-**Note on the order of the two criteria:**
+**Order of the two filters:**
 
-Cluster size is assessed BEFORE neighbour pruning. A cluster that just passes CL_SIZE_THRES can therefore be reduced below that size by the NN_THRES step, and pruning can also split a cluster into disconnected pieces that are not re-tested. This matters when CL_SIZE_THRES comes from fmri_csthreshold, since the surviving voxels then no longer carry the guarantee that threshold was derived to provide.
-
-The behaviour is kept as it is because it is what previous analyses used, and because NN_THRES defaults to 0, in which case the two steps do not interact at all. If both criteria are wanted with the size guarantee preserved, apply them in two passes:
+Size is checked first, so neighbour pruning can leave clusters below CL_SIZE_THRES or split them in two. This is kept for compatibility with earlier analyses. To guarantee every surviving cluster meets the size threshold, run the filters separately:
 
 .. code-block:: matlab
 
@@ -52,11 +47,6 @@ Examples
    clean = fmri_cleanclusters(thresh_map, cs, 2);
    clean = fmri_cleanclusters(thresh_map, 50, 0, 6);   % strict face-only
    clean = fmri_cleanclusters(thresh_map, 50, 0, 26);  % liberal corner
-
-Notes
------
-
-No progress bar is shown. The previous version opened a waitbar unconditionally, which fails in headless or batch use and leaks a window if the loop errors.
 
 See Also
 --------

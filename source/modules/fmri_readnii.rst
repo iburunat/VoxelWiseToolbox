@@ -25,7 +25,7 @@ Inputs
 Outputs
 -------
 
-- **DATA** -- Image array. Shape: [X Y Z] for 3D, [X Y Z T] for 4D. Always returned as double, regardless of how the file was stored. NIfTI images are commonly saved as int16, and MATLAB propagates integer classes through arithmetic, so returning the stored class would silently round and saturate results in any downstream detrending, z-scoring or filtering. The original on-disk class is reported in METADATA.origclass.
+- **DATA** -- Image array, [X Y Z] for 3D or [X Y Z T] for 4D data. Always returned as double to support subsequent numerical processing without integer rounding or saturation. The original storage class is reported in METADATA.origclass.
 - **METADATA** -- Structure with fields:
 
   - **.hdr** -- Full NIfTI/Analyze header
@@ -47,11 +47,11 @@ Examples
 Notes
 -----
 
-This function replaces the earlier fmri_read3Dnii and fmri_read4Dnii, which were identical. Both 3D and 4D files are handled automatically.
+This function handles both 3D and 4D files, replacing the former fmri_read3Dnii and fmri_read4Dnii functions.
 
-Reading uses load_nii, which applies the sform/qform transform and so returns the data in a consistent orientation regardless of how the file was stored. This is what makes a file line up with the toolbox's 91x109x91 MNI152 grid. Use load_untouch_nii directly if you need the raw array exactly as written, for instance when editing a header field.
+Files are read with load_nii, which applies the available sform/qform orientation information. Use load_untouch_nii instead if the image array and header must remain exactly as stored.
 
-fmri_export writes with make_nii, which builds a fresh header from the voxel size and origin rather than preserving the one read here. A read-modify-write cycle therefore keeps the data and geometry but not any other header fields.
+fmri_export creates a new header from the voxel size and origin rather than preserving the complete header read here. A read-modify-write cycle therefore preserves the image data and basic geometry, but may not retain other header information.
 
 See Also
 --------

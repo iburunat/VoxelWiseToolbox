@@ -19,8 +19,8 @@ Usage
 Inputs
 ------
 
-- **X_COMPRESSED** -- Cell array {1 x N} of compressed participant data, as returned by fmri_simdata.
-- **SVD_INFO** -- Struct array (1 x N) with SVD bases and volume dimensions, as returned by fmri_simdata.
+- **X_COMPRESSED** -- Cell array {1 x N_PARTICIPANTS} of SVD-compressed data. Each cell contains a struct with fields U, S, V. One participant is reconstructed per call: data = fmri_simget(X_COMPRESSED, SVD_INFO, p); which returns that participant's 228453 x T time series, ready for any analysis function. Reconstruct one at a time.
+- **SVD_INFO** -- Struct array (1 x N) with the singular values and volume dimensions, as returned by fmri_simdata.
 - **P** -- Participant index (integer in [1, N]).
 - **AS_VECTOR** -- If 1 (default), return vectorized brain data (228453 x T). If 0, return the full 4D volume (91 x 109 x 91 x T).
 
@@ -41,10 +41,23 @@ Examples
    data = fmri_simget(X_comp, svd_info, 1, 1);   % 228453 x T
    r    = fmri_corregressor(regressor, data);
 
+   % Analyse one participant: reconstruct, then correlate with the task
+   [X_comp, S_3D, W, svd_info] = fmri_simdata(10, 8, 200, 2);
+   data = fmri_simget(X_comp, svd_info, 1);        % participant 1, 228453 x T
+   r    = fmri_corregressor(W.bold(:, 1, 1), data);
+   fmri_showslices(r, 1, 2, [-0.8 0.8]);
+
+   % A map purely for trying the display functions: no data and no analysis,
+   % just the source maps combined with chosen weights, two positive and two
+   % negative. This is NOT a statistical map; see demo_glm.
+   S   = fmri_vol2vect(S_3D);                      % 228453 x N_SOURCES
+   map = S(:, 1:4) * [3 2.7 -3 -2.4]';
+   fmri_showslices(map, 1, 2, [-4 4], [], [], 1, [], 1);
+
 Notes
 -----
 
-fmri_simdata stores each participant as a TRUNCATED SVD (by default enough components for 95%% of variance), so this reconstruction is a low-rank approximation, not the exact simulated data. That is by design, for memory efficiency, and is appropriate for testing and demonstration. If you need the exact data, request the 5th output X_FULL from fmri_simdata, or reconstruct from the full bases in SVD_INFO (U_full, S, V_full).
+fmri_simdata uses truncated SVD compression, retaining enough components to explain 95% of the variance by default. The reconstructed data are therefore a low-rank approximation of the simulated data. For the exact simulated volumes, request X_FULL from fmri_simdata.
 
 See Also
 --------

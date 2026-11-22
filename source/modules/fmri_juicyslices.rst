@@ -6,7 +6,7 @@ Finds the slices carrying most of a map's signal.
 Description
 -----------
 
-Picks the slices worth showing, instead of the evenly spaced set the default viewers produce. A regularly spaced mosaic devotes equal space to every slice, so a focal result occupies a few pixels in two panels and empty anatomy fills the rest. Selecting slices by content and then displaying fewer of them larger is usually the difference between a figure that shows an effect and one that merely contains it.
+Selects slices containing the strongest signal instead of using evenly spaced slices. This avoids devoting most panels to empty anatomy when the signal is spatially focal. The selected slices can then be displayed in fewer, larger panels, making the spatial pattern easier to see.
 
 Usage
 -----
@@ -35,9 +35,9 @@ Outputs
 HOW SLICES ARE SCORED
 ---------------------
 
-Each slice scores the sum of \|value\| over its suprathreshold voxels. This favours slices carrying a lot of strong signal over slices that clip the edge of a large cluster. Counting suprathreshold voxels instead would favour broad weak effects; summing unthresholded values would let a large volume of near-zero noise outweigh a focal result. Neither is wrong, but the sum of suprathreshold magnitude matches what a reader sees.
+Each slice is scored by summing the absolute values of its suprathreshold voxels, favouring slices with both strong and spatially extensive signal.
 
-Selection is greedy: take the highest-scoring slice, exclude everything within MINSEP of it, repeat. This is not the globally optimal spread, but it is predictable and it never returns two slices through the same blob.
+The highest-scoring slice is selected first, slices within MINSEP are excluded, and the process is repeated. This avoids selecting closely spaced slices that show largely overlapping signal.
 
 Examples
 --------

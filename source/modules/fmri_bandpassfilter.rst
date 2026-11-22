@@ -45,8 +45,6 @@ Examples
 Notes
 -----
 
-A brick-wall filter has a perfectly sharp transition band, at the cost of ringing in the time domain (Gibbs phenomenon) for signals with sharp transients. For fMRI time series, which are dominated by low frequencies, this is rarely a practical concern.
-
 Any regressor to be correlated with filtered data should be filtered with the same band, so that both share the same frequency support.
 
 See Also

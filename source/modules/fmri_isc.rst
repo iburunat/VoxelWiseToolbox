@@ -6,13 +6,19 @@ Voxelwise intersubject correlation (ISC).
 Description
 -----------
 
-Computes, at every in-brain voxel, how strongly participants' time series agree while they receive the same stimulus. Accepts participants as an in-memory array or streams them from disk one at a time, which is what makes a full-resolution cohort affordable.
+Computes intersubject correlation (ISC) at each voxel, measuring the similarity of participants' time series while they experience the same stimulus. Participant data can be supplied as an in-memory array or read from disk one participant at a time, allowing full-resolution datasets to be analysed with substantially lower memory requirements.
 
-Leave-one-out ISC (Hasson et al. 2004): for each participant, correlate their voxel time series with the mean of the other participants at the same voxel, then average the correlations across participants in Fisher-z space.
+Leave-one-out ISC (Hasson et al., 2004): at each voxel, correlate each participant's time series with the mean of the others, then average the correlations in Fisher-z space.
 
-Pairwise ISC: correlate every pair of participants at each voxel and average all N\*(N-1)/2 correlations in Fisher-z space. Pairwise values are typically lower than leave-one-out values, because correlating against a less noisy group mean generally gives a higher correlation than correlating two individual participants.
+Pairwise ISC: at each voxel, correlate every pair of participants and average the N\*(N-1)/2 correlations in Fisher-z space. Values are typically lower than leave-one-out ISC because a group mean is generally less noisy than an individual time series.
 
-Permutation p-values: each participant's per-voxel time series is phase- scrambled independently, preserving each voxel's temporal power spectrum while removing intersubject synchrony. The p-value is the fraction of permutations whose ISC reaches the observed one, with the standard +1 correction so it is never exactly zero.
+.. code-block:: matlab
+
+   Permutation p-values: independently phase-scramble each participant's time
+   series at every voxel, preserving its power spectrum while disrupting
+   intersubject synchrony. The p-value is the proportion of permutations with
+   ISC equal to or greater than the observed value, using a standard +1
+   correction to prevent p = 0.
 
 Usage
 -----
@@ -26,7 +32,7 @@ Usage
 Inputs
 ------
 
-- **DATA** -- Participants' time series, in any of three forms: \* 228453 x T x N numeric array (all participants in memory) \* cell array of paths to .mat files, one per participant \* path to a directory containing one .mat file per participant The latter two stream from disk and are the practical choice at full resolution: 228453 voxels x 451 volumes x 15 participants is 12.4 GB as an array, and the leave-one-out computation formerly allocated a further (N-1)-deep array per iteration, peaking near 24 GB. Streaming holds the running sum and one participant, about 1.7 GB. Each file must contain a single variable, or one named 'data' or 'voldata' - the same convention fmri_acfestimate uses. Streaming supports 'leaveoneout' without permutations. The pairwise method visits every pair and permutation tests rescramble every participant, so both would re-read the data many times over; the function says so rather than running for hours.
+- **DATA** -- Participants' time series, in any of three forms: \* 228453 x T x N numeric array (all participants in memory) \* cell array of paths to .mat files, one per participant \* path to a directory containing one .mat file per participant The latter two options read one participant at a time and are recommended for full-resolution datasets. For example, data with 228453 voxels, 451 volumes and 15 participants require 12.4 GB in memory, compared with about 1.7 GB when streamed. Each .mat file must contain a single variable, or one named 'data' or 'voldata'. Streaming supports only 'leaveoneout' without permutations. Pairwise ISC and permutation testing require repeated access to every participant and are therefore available only for in-memory data.
 - **METHOD** -- 'leaveoneout' (default) or 'pairwise'.
 - **N_PERM** -- Number of phase-scrambling permutations for p-values (default 0, no permutation testing).
 

@@ -1,12 +1,12 @@
 fmri_p2t
 ========
 
-t-value needed to reach a given p-threshold.
+t-value corresponding to a given p-threshold.
 
 Description
 -----------
 
-Answers "how large must t be to count as significant here?". Use it to set a display threshold that matches the threshold the analysis actually used - a figure drawn at a looser value shows voxels the analysis did not call significant, which reads as noise scattered over the result.
+Returns the t-value corresponding to a given p-value and degrees of freedom. This can be used to match a figure's display threshold to the significance threshold used in the analysis, avoiding the display of voxels that do not meet that threshold.
 
 Usage
 -----
@@ -42,9 +42,9 @@ Critical t rises steeply as df falls, and the round numbers that look reasonable
 
 .. code-block:: matlab
 
-   Drawing a df = 2 map at |t| >= 2 shows roughly 9% of the brain by chance.
+   Drawing a df = 2 map at |t| >= 2 shows roughly 18% of the brain by chance.
 
-Note on colour limits: scale to a small multiple of T_CRIT rather than to max(abs(t_map)). At low df the t distribution is heavy-tailed, so the maximum is an outlier and scaling to it compresses every significant voxel to the middle of the colormap - the map then looks empty.
+Note on colour limits: use a small multiple of T_CRIT instead of the largest absolute t-value in the map. At low degrees of freedom, a few very large t-values can stretch the colour scale, making the remaining significant values difficult to distinguish.
 
 Examples
 --------

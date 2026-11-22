@@ -6,7 +6,7 @@ Removes motion artefacts from fMRI data via regression.
 Description
 -----------
 
-Regresses motion parameters out of the fMRI time series using ordinary least squares. The motion regressors are z-scored before regression for numerical stability, and an intercept is included so that the residuals retain the mean signal. The residuals are the data with motion-related variance removed.
+Regresses motion parameters from the fMRI time series using ordinary least squares. The regressors are z-scored and fitted with an intercept. The returned residuals are therefore motion-adjusted and mean-centred.
 
 Usage
 -----

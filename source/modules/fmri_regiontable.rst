@@ -6,7 +6,7 @@ Cluster and ROI table for a thresholded statistical map.
 Description
 -----------
 
-For a binary thresholded brain map, identifies all clusters, labels each voxel with its atlas region, and returns a structured summary table. Useful for reporting activation results: lists cluster size, peak coordinate, peak statistic, MNI location, and atlas region for every cluster.
+Identifies clusters in a thresholded brain map and lists the atlas regions within each cluster. For every region, it reports the number of voxels, peak statistic and peak MNI coordinates. Results are returned as structures, tab-separated text, voxel maps and a MATLAB table.
 
 Usage
 -----
@@ -22,19 +22,19 @@ Inputs
 
 - **DATA_THRES** -- Binary brain map (228453 x 1), logical or double: nonzero = suprathreshold voxel.
 - **DATA** -- Continuous statistical map (228453 x 1): used for peak values.
-- **CLSIZE** -- Minimum cluster size in voxels. Default: 0 (all clusters).
-- **ROISIZE** -- Minimum region size in voxels to appear in the table. Default: 0. Capped at CLSIZE, since a region cannot be required to be larger than the cluster containing it.
+- **CLSIZE** -- Minimum cluster size in voxels. Default: 0.
+- **ROISIZE** -- Minimum number of voxels an atlas region must contain to appear in the results. Default: 0. May exceed CLSIZE. Clusters containing no regions that meet this threshold are not reported.
 - **ATLAS** -- Atlas number. Default: 1 (AAL). Run fmri_atlas() for the list of atlases and their region counts, which is maintained in fmri_loadatlas rather than repeated here.
 
 Outputs
 -------
 
-- **CLUST** -- Struct array, one element per cluster. Fields: centroid (MNI mm), n (voxels), and region, itself a struct array with name, n, coord, z and BA for each atlas region in the cluster.
+- **CLUST** -- Struct array, one element per reported cluster, in the same order that S and T number them: left hemisphere first, then right, largest first within each. Fields: centroid (MNI mm), n (voxels), and region, itself a struct array with name, n, coord, z and BA for each atlas region in the cluster. [clust.n] therefore gives the extents of Clusters 1..N.
 - **S** -- The same information as tab-separated text, for pasting into a manuscript.
-- **ROI** -- Cell array: ROI{c} is a (228453 x K) binary matrix of the K atlas regions within cluster c.
+- **ROI** -- Cell array: ROI{c} is a (228453 x K) binary matrix of the K REPORTED atlas regions of cluster c, those meeting ROISIZE.
 - **LIST** -- Cell array: LIST{c}{k} names the region in ROI{c}(:,k).
 - **ROI_IDX** -- The same regions as voxel INDICES rather than binary maps.
-- **CLUS** -- (228453 x nClusters) matrix: column c = binary map of cluster c. Fast plotting: fmri_show3d(clus(:,[1 3]))
+- **CLUS** -- (228453 x nClusters) matrix. Column c holds the union of the regions reported for cluster c, so with ROISIZE > 0 it can be smaller than the cluster itself: nnz(clus(:,c)) <= clust(c).n, which remains the whole cluster's voxel count. Fast plotting: fmri_show3d(clus(:,[1 3]))
 - **T** -- MATLAB table of the rows printed in S, with columns Cluster, Hemisphere, Region, Voxels, X, Y, Z, Peak, BA. Convenient for sorting, filtering and writetable(T, 'results.csv').
 
 Examples
@@ -51,27 +51,47 @@ Examples
 Notes
 -----
 
-SIGNED MAPS. Clusters are formed from DATA_THRES alone, and each peak is located by \|DATA\| with the signed value reported. The output is split by hemisphere but NOT by direction, so a spatially contiguous cluster holding both positive and negative voxels is reported as one cluster and the mixture is not flagged. To keep the directions distinct, call twice with direction-specific masks:
+.. code-block:: matlab
+
+   SIGNED MAPS
+   Clusters are defined by DATA_THRES, and each peak is located using
+   abs(DATA), with its signed value reported. The output is grouped by
+   hemisphere, but clusters are not separated by sign. A contiguous
+   cluster containing both positive and negative values is therefore
+   reported as a single cluster. To analyse the two directions separately,
+   call the function with sign-specific masks:
 
 .. code-block:: matlab
 
    fmri_regiontable(mask & stat > 0, stat, ...)
    fmri_regiontable(mask & stat < 0, stat, ...)
 
-THE BA COLUMN. BA is the MODAL Brodmann area across each region's voxels, read from the Talairach Daemon maps whatever atlas names the rows. It therefore annotates a region defined by one atlas with a label from another, and is a pointer to the nearby cytoarchitecture rather than a property of the region itself. Two consequences:
+.. code-block:: matlab
 
-- The vote is taken over the LABELLED voxels only, so a label can rest on very few of them. Brodmann maps cover cortex only, roughly a quarter of the brain mask, with deliberate gaps between adjacent areas, so most of a region's voxels carry no area at all. A label backed by three voxels and one backed by three hundred are reported identically. 0 means no voxel in the region carries any Brodmann label.
-
-- Where the two atlases place a boundary differently, the label can be plainly wrong for the region named beside it. Cerebellar regions are the clearest case: they abut occipital cortex across the tentorium, two voxels wide at 2 mm, so a cerebellar region can be labelled BA18 or BA19 although the cerebellum has no Brodmann area at all.
+   HEMISPHERE ASSIGNMENT
+   Each cluster is assigned to a hemisphere from the x-coordinate of its
+   centroid. Clusters crossing the midline are not split; a centroid at
+   x = 0 is assigned to the right hemisphere.
 
 .. code-block:: matlab
 
-   Brodmann areas also cannot be observed in MRI - they are cytoarchitectonic
-   and vary between individuals - so a template label is an approximation
-   however it is obtained. For Brodmann areas as regions in their own right,
-   pass ATLAS = 19: each row is then an area, its voxel count is that area's
-   own, nothing is inferred across atlases, and unlabelled voxels are grouped
-   as Unlabelled.
+   BRODMANN AREA COLUMN
+   For each atlas region within a cluster, BA is the most frequent non-zero
+   Brodmann label among its voxels. Voxels without a Brodmann label are
+   excluded, and BA = 0 means that none of the region's voxels has a label.
+
+.. code-block:: matlab
+
+   Unless ATLAS = 19, the region labels come from the selected atlas, while
+   BA comes from the toolbox Brodmann atlas. The BA column is therefore an
+   approximate additional label rather than the atlas label defining the
+   region.
+
+.. code-block:: matlab
+
+   With ATLAS = 19, the same Brodmann atlas defines both the table rows and
+   the BA column. The BA column therefore repeats the area defining each row;
+   unlabelled voxels are reported with BA = 0.
 
 **Atlas numbers (fmri_loadatlas is the source of truth):**
 

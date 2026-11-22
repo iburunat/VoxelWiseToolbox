@@ -38,12 +38,12 @@ Examples
 
    % Whole-brain significance map (two-tailed)
    r_map = fmri_corregressor(regressor, data);
-   df    = size(data, 2) - 2;
+   df    = size(data, 2);          % N, not N-2; see CHOOSING DF below
    [p_pos, p_neg] = fmri_r2p(r_map, df);
 
    % Single correlation with autocorrelation-corrected df (positive)
    df = fmri_effdf(ts1, ts2);
-   r  = corr(ts1, ts2);
+   r  = fmri_corrmat(ts1, ts2);
    p  = fmri_r2p(r, df, 1);
 
    % One-tailed test for negative correlations
@@ -53,41 +53,36 @@ Examples
    sig_map = p_pos < 0.001;
    fmri_showslices(sig_map, 1, 2)
 
-DF CONTEXT - CHOOSING THE RIGHT VALUE
--------------------------------------
+CHOOSING DF
+-----------
 
-DF is the number of OBSERVATIONS, not the conventional N-2 of a t-test. This function works through the Fisher transform, whose standard error is 1/sqrt(DF-3); the "-3" is already the correction for having estimated a correlation. Subtracting 2 as well removes the same degrees of freedom twice and makes every p-value conservative.
+In this function, DF represents the effective number of observations, not the conventional N-2 degrees of freedom of a correlation t-test. The Fisher transformation already applies the adjustment sqrt(DF-3), so do not subtract an additional 2.
 
-FIRST LEVEL - one participant, correlation over TIME points.
+FIRST LEVEL - correlation across time points
 
-Filtering and smoothing leave neighbouring time points dependent, so the nominal number of volumes overstates the information present:
+Temporal autocorrelation reduces the effective number of independent observations. Estimate it with fmri_effdf:
 
 .. code-block:: matlab
 
    df = fmri_effdf(regressor, data(v,:)');
    p  = fmri_r2p(r, df);
 
-GROUP LEVEL - correlation across PARTICIPANTS.
+GROUP LEVEL - correlation across participants
 
-The observations are participants, and temporal autocorrelation does not enter: it is a first-level concern.
+When participants are treated as independent observations, use their number directly:
 
 .. code-block:: matlab
 
    df = size(participant_maps, 2);        % N, not N-2
    p  = fmri_r2p(rho, df);
 
-PARTIAL CORRELATION - across participants, C confounds partialled out.
+PARTIAL CORRELATION - C confounds removed
 
-Each confound costs one degree of freedom:
+Reduce the number of observations by the number of confounds:
 
-.. code-block:: matlab
+- **df = N** -- C; p  = fmri_r2p(rho, df);
 
-   df = N - C;                            % not N-C-2, not N-C-1
-   p  = fmri_r2p(rho, df);
-
-These three cases were previously undocumented, and both a manuscript example and a proposed convenience wrapper got the partial-correlation case wrong in the same direction (N-C-2 and N-C-1 respectively). The rule is that DF counts observations minus confounds; the function subtracts the 3 itself.
-
-A wrapper that selected DF automatically from an analysis "type" was considered and rejected. It cannot know whether a given N counts time points or participants - that is exactly the judgement the user has to make - so it would have concealed the choice while still requiring it to be right.
+In summary, use the effective number of observations after accounting for temporal dependence and any confound regressors. fmri_r2p applies the Fisher sqrt(DF-3) adjustment internally.
 
 See Also
 --------

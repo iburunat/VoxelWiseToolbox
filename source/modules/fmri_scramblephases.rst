@@ -6,9 +6,9 @@ Phase-scrambles a brain volume or time series.
 Description
 -----------
 
-Randomises the phase spectrum of the input while preserving the amplitude spectrum exactly. The result is a surrogate with the same spatial or temporal autocorrelation structure as the original but with shuffled phase relationships - the same power spectrum, with the signal destroyed.
+Randomises the Fourier phases of the input while preserving its amplitude spectrum. The resulting surrogate retains the original power spectrum and corresponding circular autocorrelation structure, while disrupting the temporal or spatial arrangement of the signal.
 
-Used to generate null distributions for permutation tests: correlating phase-randomised regressors with brain data gives pseudo-normal statistical images with the same autocorrelation as the true SI, which is the basis of the cluster-size correction in fmri_acfestimate and fmri_csdist.
+This is useful for permutation tests that require surrogate data with the same spectral properties as the observed data but without its original phase relationships. Phase-scrambled surrogates can be used to build permutation null distributions while preserving spatial or temporal autocorrelation. This approach is used by fmri_acfestimate and fmri_csdist for cluster-size correction.
 
 Usage
 -----
@@ -22,32 +22,34 @@ Inputs
 ------
 
 - **F** -- Data to scramble, real and finite: a vector (one time series), a volume (91 x 109 x 91), or a matrix (228453 x T).
-- **DIM** -- Scramble along this dimension only, independently for every series along it. Default: empty, which scrambles across all dimensions at once. See WHICH FORM YOU WANT below.
+- **DIM** -- Dimension along which phases are scrambled. Each series along DIM is processed independently. Default: [] applies one joint N-dimensional transform across the full input array. The default is appropriate for a 3D volume or a 2D image, where the whole spatial structure is to be randomised, and harmless for a vector, which has only one dimension to scramble.
 
 Outputs
 -------
 
-- **FS** -- Phase-scrambled array, the same size and class as F. The result is real; the real() call in the code removes numerical dust only.
+- **FS** -- Phase-scrambled array, the same size and floating-point class as F. The result is real; the real() call in the code removes only the small imaginary component caused by numerical round-off.
 
-WHICH FORM YOU WANT
--------------------
+CHOOSING DIM
+------------
 
-Omitting DIM applies an N-dimensional FFT, which scrambles across every dimension jointly. That is right for a 3D volume, where the whole spatial structure is to be randomised, and harmless for a vector, which has only one dimension to scramble.
+Leave DIM empty for a vector, or to jointly scramble the spatial structure of a 2D image or a 3D volume.
 
-It is almost never right for a VOXELS x TIME matrix. Scrambling that jointly randomises phase across voxels as well as across time, destroying the spatial arrangement along with the temporal one. What is normally wanted is each voxel's own time series scrambled independently, preserving that voxel's temporal power spectrum:
+For a voxels x time matrix, use DIM = 2 to scramble each voxel time series independently while preserving its temporal power spectrum:
 
 .. code-block:: matlab
 
    fs = fmri_scramblephases(data, 2);     % data is 228453 x T
 
-Passing a 2D matrix without DIM therefore raises a warning. Vectors and 3D volumes do not, since for them the joint form is the sensible one.
+Omitting DIM for a matrix applies a joint transform across voxels and time, altering both its spatial and temporal phase relationships.
+
+Passing a 2D matrix without DIM therefore raises a warning: the function cannot tell an image from a voxels x time matrix. Vectors and 3D volumes do not, since for them the joint form is the only sensible one.
 
 The DIM form is vectorised - one FFT over the whole array rather than a loop over voxels, which at 228453 voxels is the difference between seconds and hours. No loop is needed for per-voxel temporal scrambling.
 
-HOW THE RANDOM PHASES ARE OBTAINED
-----------------------------------
+HOW RANDOM PHASES ARE GENERATED
+-------------------------------
 
-The phases come from the FFT of a REAL random array, angle(fftn(rand(...))), rather than from uniformly drawn angles. The transform of a real array is conjugate-symmetric, so those phases are antisymmetric, the surrogate is exactly real, and its amplitude spectrum is preserved to machine precision. Drawing angles directly would break that symmetry and leave an imaginary residue that has to be discarded, changing the spectrum slightly.
+Random phases are obtained from the FFT of a real random array: angle(fftn(rand(...))). Their conjugate symmetry ensures a real-valued surrogate while preserving the input amplitude spectrum to numerical precision.
 
 Examples
 --------

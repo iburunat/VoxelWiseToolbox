@@ -25,21 +25,9 @@ Inputs
 - **LIGHT** -- Light source positions (K x 2) matrix [az1 el1; az2 el2; ...]. Default: [45 0; -45 0].
 - **CLIMITS** -- Colour axis limits [min max]. Default: [] = [min max] of the data.
 
-NOTE ON THRESHOLDING - there is deliberately no THRESHOLD argument here, unlike fmri_showslices / fmri_showplanes / fmri_showselectslices. Those renderers derive the displayed geometry from the thresholded voxel data, so hiding a voxel is meaningful. This function separates four concerns:
+THRESHOLDING The anatomical volume defines the rendered surface, while DATA provides the values used to colour it. CLIMITS controls the colour scale: values outside the range receive the end colours rather than being hidden. Use CROP to remove anatomy from the rendering.
 
-geometry            <- the anatomical volume (mask2) at isolevel LEV surface scalars     <- DATA, interpolated onto those vertices by
-
-.. code-block:: matlab
-
-   isosurface(mask2, lev, data)
-
-colour mapping      <- CLIMITS and CMAP removal of anatomy  <- CROP
-
-The anatomical volume defines the surface geometry; the statistical map provides the scalar values interpolated onto that surface for colour rendering. Masking those scalars therefore changes colours, not the rendered object, and CLIMITS already controls the value-to-colour mapping.
-
-Use CLIMITS to control the colour scaling; values outside the range are clipped to the end colours, not hidden. Use CROP to actually remove anatomy from the render.
-
-With the default diverging blue-grey-red colormap, symmetric limits (e.g. [-z z]) place zero at the midpoint of the colour scale, producing a neutral grey background with negative values in blue and positive in red. This holds for the default CMAP; an arbitrary CMAP has no guaranteed neutral midpoint.
+For signed maps, symmetric limits such as [-z z] place zero at the centre of the default diverging colormap, with negative values in blue and positive values in red.
 
 CROP      - Restricts which part of the SURFACE is drawn. Either a
 
@@ -75,5 +63,5 @@ Examples
 See Also
 --------
 
-:doc:`fmri_show3d <fmri_show3d>` · :doc:`fmri_showslices <fmri_showslices>` · :doc:`fmri_braincake <fmri_braincake>` · :doc:`fmri_regionmask <fmri_regionmask>`
+:doc:`fmri_show3d <fmri_show3d>` · :doc:`fmri_showslices <fmri_showslices>` · :doc:`fmri_braincake <fmri_braincake>` · :doc:`fmri_regionmask <fmri_regionmask>` · :doc:`fmri_colorbar <fmri_colorbar>`
 

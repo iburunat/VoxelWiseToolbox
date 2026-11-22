@@ -28,7 +28,7 @@ Inputs
 
 - **'paired'** -- true for a paired test (requires equal numbers of columns). Default: false.
 - **'tail'** -- 'both' (default), 'right' (DATA1 > DATA2), or 'left'.
-- **'nperm'** -- 0 (default) for the parametric p-value. Above 0, p comes from a permutation null instead: sign flips for one-sample and paired designs, and group-label shuffles for two-sample designs. The observed t-statistic and degrees of freedom are unchanged; only the method used to calculate p differs. Each permutation recomputes the whole map, so whole-brain analyses can take several minutes. Progress is reported approximately every 10%.
+- **'nperm'** -- Number of permutations used to calculate p-values. Default: 0, which uses the parametric t-distribution. For one-sample and paired tests, permutations randomly flip participant signs; for two-sample tests, they shuffle group labels. The observed t-statistic and degrees of freedom are unchanged. Whole-brain permutation tests may take several minutes, with progress reported approximately every 10%.
 
 Outputs
 -------
@@ -37,31 +37,31 @@ Outputs
 - **P** -- Voxels x 1 p-value.
 - **DF** -- Degrees of freedom (scalar).
 
-WHICH TEST, AND WHY IT MATTERS FOR fMRI
----------------------------------------
+CHOOSING THE TEST
+-----------------
 
-ONE-SAMPLE is the standard group analysis: each participant contributes one map (a contrast, or a Fisher-z transformed correlation), and the question is whether the effect differs from zero across participants. The degrees of freedom are N-1, where N is the number of PARTICIPANTS, not time points. This is why temporal autocorrelation does not enter: the observations being tested are participants, and the null variance is estimated from the spread between them. See fmri_effdf for the separate first-level problem.
+ONE-SAMPLE tests whether participant-level values differ from zero. In a typical group analysis, each participant contributes one contrast map or Fisher-z-transformed correlation map. The degrees of freedom are N-1, where N is the number of participants. Temporal autocorrelation is a first-level concern and does not enter this group-level test.
 
-TWO-SAMPLE compares independent groups, e.g. patients against controls.
+TWO-SAMPLE compares two independent groups, such as patients and controls.
 
-PAIRED compares two conditions measured in the same participants, e.g. pre- against post-intervention. It is a one-sample test on the differences, and is more sensitive than a two-sample test when the pairing is real.
+PAIRED compares two measurements from the same participants, such as pre- and post-intervention values. It is equivalent to a one-sample test on the within-participant differences.
 
-PREPARING THE INPUT
--------------------
+PREPARING CORRELATION MAPS
+--------------------------
 
-If the per-participant maps are CORRELATIONS, transform them before testing:
+**Transform participant-level correlation maps before testing:**
 
 .. code-block:: matlab
 
-   z_maps = atanh(r_maps);          % variance-stabilising
+   z_maps = atanh(r_maps);
    [t, p] = fmri_ttest(z_maps);
 
-Use plain atanh, NOT fmri_fisherz. fmri_fisherz returns the standardised test statistic atanh(r)\*sqrt(df-3), which already divides by a standard error; feeding it to a t-test would divide by a standard error twice. See the note in fmri_fisherz.
+Use ATANH rather than fmri_fisherz. fmri_fisherz also standardises the transformed correlations by sqrt(df-3), which is not appropriate before a group t-test.
 
-VOXELS WITH NO VARIANCE, OR WITH MISSING DATA
----------------------------------------------
+CONSTANT OR NON-FINITE VOXELS
+-----------------------------
 
-Where a voxel is constant across participants the standard error is zero and t would be Inf or NaN. The same applies where any participant contributes a non-finite value, which makes the mean and standard deviation non-finite. Such voxels are set to t = 0, p = 1: no variance and no data both mean no evidence, which is the honest reading and keeps the maps finite for downstream cluster steps.
+Voxels with zero variance across participants, or with any non-finite participant value, cannot produce a valid t-statistic. They are returned as t = 0 and p = 1, keeping the output finite for subsequent analyses.
 
 Examples
 --------

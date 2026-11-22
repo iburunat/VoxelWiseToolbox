@@ -20,10 +20,10 @@ Usage
 Inputs
 ------
 
-- **DATA** -- Thresholded brain map, vectorized (228453 x 1). Non-zero voxels are assigned to Brodmann areas; zeros are ignored.
+- **DATA** -- Brain map, vectorized (228453 x 1). Voxels at or above LEVEL are assigned to Brodmann areas. Pass either a thresholded map with LEVEL in (0,1), or the map itself with LEVEL set to your statistical threshold. The two give near-identical surfaces.
 - **AZ** -- Azimuth angle in degrees. Default: 0.
 - **EL** -- Elevation angle in degrees. Default: 0.
-- **LEVEL** -- Isosurface threshold (fraction of max). Default: 0.9.
+- **LEVEL** -- Isosurface value, in the units of DATA, and also the cut-off deciding which areas appear. Default: 0.1, which enlarges the surfaces so small pieces stay visible; use 0.5 to draw them at their true size. See fmri_show3d.
 - **SURFALPHA** -- Opacity of the area surfaces, scalar or one value per area. Default: 1.
 - **COLOR** -- N x 3 RGB matrix, one colour per Brodmann area found. Default: fmri_distinctcolors(number of areas), which keeps the colours perceptually distinguishable however many areas there are. Supplying fewer rows than there are areas warns, and the palette is replaced by fmri_distinctcolors.
 - **MASKALPHA** -- Opacity of the background brain shell. Default: 0.05.
@@ -43,13 +43,9 @@ Examples
 Notes
 -----
 
-Internally the map is split into a 228453 x nAreas binary matrix, one column per Brodmann area present, and that matrix is handed to fmri_show3d, which renders each column as a separately coloured isosurface. The split is what this function adds; the rendering, lighting and shell conventions are fmri_show3d's and are shared with every other 3D viewer.
+The map is split by Brodmann area, and each area is rendered in a different colour. Unlabelled and non-cortical voxels are not shown.
 
-Only part of a map will be rendered. The Brodmann maps cover cortex only, about a quarter of the brain mask, so voxels in white matter, cerebellum, subcortex or the gaps the Talairach Daemon leaves between areas carry no area and are silently dropped. A map lying entirely outside cortex renders nothing and warns.
-
-The area-number key is drawn in a panel beside the brain, in figure coordinates, so it stays inside the figure for any number of areas and does not move when the view is rotated. Numbers rather than names: the full labels (for example 'BA41 Primary auditory (Heschl)') are available from fmri_loadatlas(19) but are far too long for a compact key.
-
-Earlier versions declared an ATLAS argument that was never used - the parcellation could not in fact be changed - and errored if a second argument was supplied. The signature now matches fmri_show3d, whose arguments this function passes through.
+A fixed key beside the brain identifies the areas present.
 
 See Also
 --------

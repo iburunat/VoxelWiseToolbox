@@ -6,7 +6,7 @@ Three-plane (sagittal/coronal/axial) slice view with crosshair.
 Description
 -----------
 
-Renders the three orthogonal slices passing through a given voxel coordinate: sagittal (YZ), coronal (XZ), and axial (XY). A crosshair marks the intersection point in all three planes. The three panels are displayed as a single composite RGB figure.
+Displays sagittal, coronal and axial slices intersecting at a selected voxel. A crosshair marks the selected location in each view, and the three slices are combined in a single figure.
 
 Usage
 -----
@@ -31,7 +31,7 @@ Inputs
 - **OVERLAYALPHA** -- Opacity of the activation overlay on the grey brain (0 = invisible, 1 = opaque). Default: 1.
 - **BGCOLOR** -- Figure background: 'k' (default) or 'w', or an RGB triple. Everything outside the brain is zero and therefore renders black; 'w' inverts the surround for print figures.
 - **CROSSHAIRCOLOR** -- RGB of the crosshair lines. Default: [0 1 0] (green).
-- **THRESHOLD** -- Which voxels are drawn, stated explicitly rather than inferred from CLIMITS. Default: []. > 0 : draw where \|value\| >= THRESHOLD. Keeps strong effects of both signs and hides the weak middle. CLIMITS(1) must sit strictly below THRESHOLD: data is clamped into CLIMITS first, so otherwise every sub-threshold voxel is clamped up into view and the whole brain is painted. Zero is usually the right CLIMITS(1). = 0 : draw every finite voxel; zero is an ordinary value, not a control code. Mark voxels to hide with NaN. []  : legacy rule, draw where value >= CLIMITS(1). Suits a one-sided map; on a signed map it also draws negative voxels, and hides zeros only if CLIMITS(1) > 0.
+- **THRESHOLD** -- Controls which voxels are displayed. Default: []. > 0 : display voxels with \|value\| >= THRESHOLD, retaining effects of both signs. CLIMITS(1) must be lower than THRESHOLD; zero is usually appropriate. = 0 : display all finite voxels. Use NaN to hide voxels. []  : display voxels with value >= CLIMITS(1). This legacy rule is mainly suitable for one-sided maps.
 
 Examples
 --------

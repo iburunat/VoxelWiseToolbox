@@ -39,7 +39,7 @@ Examples
 Notes
 -----
 
-Anchor values are the mean of the scans nearest each knot. Because the first and last knots sit at the ends of the run, they have neighbours on one side only, and so are estimated from about half as many scans as the interior knots (for T = 150 and 6 knots: 15, 30, 30, 30, 30, 15). The fitted drift is therefore somewhat less well determined at the very start and end of a run -- an edge effect shared, in some form, by all drift removal methods, including SPM's DCT high-pass filter. This behaviour is deliberately preserved for consistency with results published using earlier versions of the toolbox.
+Anchor values are calculated by averaging the scans closest to each knot. The first and last knots have scans on only one side, so their averages are based on fewer scans than those of the interior knots (for T = 150 and 6 knots: 15, 30, 30, 30, 30, 15). Consequently, the estimated drift may be less reliable at the beginning and end of the run. This edge effect is common to drift-removal methods and is preserved here for consistency with earlier toolbox versions.
 
 For high-pass filtering in the frequency domain, see fmri_bandpassfilter.
 

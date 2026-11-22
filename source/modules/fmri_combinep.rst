@@ -29,7 +29,7 @@ Inputs
 Outputs
 -------
 
-- **P_COMBINED** -- 228453 x 1 combined p-value map
+- **P_COMBINED** -- 228453 x 1 combined p-value map. Voxels with any non-finite p-value across participants are returned as NaN.
 - **STAT** -- 228453 x 1 test statistic map (chi2, z, or the median order statistic, according to METHOD)
 
 Examples

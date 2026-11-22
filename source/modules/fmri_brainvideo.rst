@@ -33,7 +33,7 @@ Inputs
 - **'climits'** -- Colour axis limits [min max]. Default: [] (auto-scale).
 - **'maskalpha'** -- Brain shell transparency. Default: 0.05.
 - **'color'** -- N x 3 RGB activation colour. Default: [1 0.2 0.2] (red).
-- **'level'** -- Isosurface threshold. Default: 0.9.
+- **'level'** -- Isosurface value, in the units of DATA (see fmri_show3d). Default: 0.1.
 - **'trajectory'** -- Rotation style. Default: 'cinematic'.
 
   - **'cinematic'** -- one turn, easing in and out, with a gentle elevation dip (~30 degrees)
@@ -45,8 +45,6 @@ Inputs
   - **'reveal'** -- one turn, lifting over the top at the rear
   - **'surgical'** -- descends from top-down to lateral and back
   - **'dualpass'** -- two turns, one high and one low
-
-A parameter struct from fmri_makevizpar may be given as the first option, so that a video can carry the same display settings as the still figures it accompanies. Only the fields this function recognises are taken - level, color, maskalpha, climits, el - and an explicit name-value pair after the struct still wins over it.
 
 Outputs
 -------

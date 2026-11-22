@@ -1,12 +1,12 @@
 fmri_p2r
 ========
 
-Correlation value needed to reach a given p-threshold.
+Correlation magnitude corresponding to a given p-threshold.
 
 Description
 -----------
 
-Answers "how large must r be to count as significant here?". This is the inverse of fmri_r2p, and is what you want for choosing a display threshold or reporting the sensitivity of an analysis.
+Returns the correlation magnitude associated with the specified p-value, degrees of freedom and tail setting. This is the inverse of fmri_r2p and can be used to choose a display threshold or report the sensitivity of an analysis.
 
 Usage
 -----
@@ -28,26 +28,26 @@ Outputs
 
 - **R** -- The correlation magnitude at which p equals the requested value.
 
-WHY YOU SHOULD NOT PICK A ROUND NUMBER INSTEAD
-----------------------------------------------
+WHY THE THRESHOLD DEPENDS ON DF
+-------------------------------
 
-A threshold like "r > 0.3" means nothing on its own: whether 0.3 is impressive depends entirely on how many independent observations went into it. With 200 clean time points, r = 0.3 is overwhelming. After band-pass filtering, the effective df can fall to 15 or so, and r = 0.3 is then well inside the range of pure noise. Deriving the threshold from the data's own df avoids that.
+The significance of a correlation depends on the number of independent observations. Therefore, a fixed threshold such as r > 0.3 does not correspond to the same p-value across datasets. Deriving the threshold from the relevant degrees of freedom gives the correlation associated with the requested significance level.
 
-USE THE EFFECTIVE DF. Filtering and smoothing make neighbouring time points dependent, so the nominal N overstates the information present. fmri_effdf estimates the effective value:
+For time-series data, use the effective degrees of freedom. Filtering and smoothing typically introduce temporal dependence, so the nominal number of time points may overestimate the independent information in the data:
 
 .. code-block:: matlab
 
    df_eff = fmri_effdf(regressor, one_voxel_timeseries);
    r_crit = fmri_p2r(0.001, df_eff);
 
-RELATION TO fmri_r2p
+RELATION TO FMRI_R2P
 --------------------
 
-**fmri_r2p(r, df) and fmri_p2r(p, df) are inverses:**
+fmri_p2r converts a p-value to its corresponding correlation threshold, while fmri_r2p performs the reverse conversion:
 
 .. code-block:: matlab
 
-   fmri_r2p(fmri_p2r(0.001, 50), 50)  ->  0.001
+   fmri_r2p(fmri_p2r(0.001, 50), 50)  % returns 0.001
 
 Examples
 --------

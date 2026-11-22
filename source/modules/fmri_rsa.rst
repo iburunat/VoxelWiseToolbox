@@ -6,11 +6,17 @@ Representational similarity analysis of a set of condition maps.
 Description
 -----------
 
-If DATA is a 228453 x N matrix, the neural RDM is computed internally as 1 - fmri_corrmat(data) (correlation distance). If DATA is already an N x N matrix it is used directly as the neural RDM.
+Compares the dissimilarity structure of a set of brain maps with the structure a model predicts. A neural RDM is built from the condition maps, or supplied ready-made, and the upper triangles of the two RDMs are correlated to give a single scalar for the whole set, not a voxelwise map. Set 'nperm' above zero for the calibrated permutation test.
 
-The model RDM is compared to the neural RDM using the upper triangle of both matrices (excluding the diagonal), with Spearman correlation by default (the model-to-neural relationship is monotonic but not necessarily linear).
+.. code-block:: matlab
 
-Significance: the entries of an RDM are NOT independent -- each dissimilarity shares a condition with N-2 others -- so the analytic t-test, which treats the N\*(N-1)/2 entries as independent observations, understates the variance of the correlation and returns p-values that are too small. The size of the effect depends on RDM structure: in simulation the analytic false-positive rate stays near nominal for unstructured RDMs but rises into the low-teens percent (at nominal 5%%) for smooth or strongly clustered RDMs. Use the permutation test (NPERM > 0), which shuffles the condition labels (rows and columns of the model RDM together) and is the standard, calibrated test for RSA (Nili et al. 2014). The analytic p is retained only as a quick approximate guide, and a warning is issued (once per session) when used.
+   If DATA contains condition maps (228453 x N), the neural RDM is computed
+   as correlation distance: 1 - fmri_corrmat(data). An N x N input is treated
+   as a pre-computed neural RDM.
+
+The neural and model RDMs are compared using their upper triangles, excluding the diagonal. Spearman correlation is used by default.
+
+For significance testing, use NPERM > 0. RDM entries are not independent because each condition contributes to several dissimilarities, making the analytic p-value potentially too small. The permutation test preserves the RDM structure by shuffling condition labels in the model RDM. The analytic p-value is retained only as a quick approximation and produces a warning.
 
 Usage
 -----

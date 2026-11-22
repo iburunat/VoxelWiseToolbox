@@ -67,5 +67,5 @@ Notes
 See Also
 --------
 
-:doc:`fmri_reg2vox <fmri_reg2vox>` · :doc:`fmri_regionmask <fmri_regionmask>` · :doc:`fmri_vox2reg <fmri_vox2reg>`
+:doc:`fmri_reg2vox <fmri_reg2vox>` · :doc:`fmri_regionmask <fmri_regionmask>` · :doc:`fmri_loadatlas <fmri_loadatlas>`
 

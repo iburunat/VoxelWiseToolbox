@@ -39,7 +39,7 @@ Examples
 Notes
 -----
 
-The standard brain mask defines 228453 in-brain voxels from the 91x109x91 MNI152 2mm template (total voxels: 902,629). The number 228453 is therefore a constant throughout the toolbox.
+The standard brain mask defines 228453 in-brain voxels from the 91x109x91 MNI152 2mm template (total voxels: 902,629).
 
 See Also
 --------

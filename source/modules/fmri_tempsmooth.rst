@@ -6,7 +6,7 @@ Temporal Gaussian smoothing of fMRI time series.
 Description
 -----------
 
-Convolves each voxel time series with a Gaussian kernel, suppressing high-frequency noise while preserving low-frequency BOLD signal. Useful as a preprocessing step before analyses that assume a slow haemodynamic response.
+Smooths each voxel time series by convolving it with a Gaussian kernel, reducing rapid temporal fluctuations while retaining slower signal changes.
 
 Usage
 -----
@@ -45,11 +45,11 @@ Examples
 Notes
 -----
 
-SIGMA is given in seconds and TR is supplied explicitly, so the amount of smoothing is the same physical duration regardless of the sampling rate. Earlier versions of the toolbox built the kernel on a fixed -32:2:32 grid, which silently assumed TR = 2 s. Calls of the form fmri_tempsmooth(data, 4) therefore behave exactly as before, but the function is now correct at any TR. Note that some earlier documentation described SIGMA as being in scans; this was incorrect, and the unit has always effectively been seconds.
+SIGMA is specified in seconds, and TR determines the spacing of the Gaussian kernel samples. This gives the smoothing width a consistent physical duration across different sampling rates.
 
-The kernel is normalised to sum to one, so smoothing changes the temporal shape of the signal but not its amplitude. (Earlier versions omitted this normalisation and scaled the data by roughly 0.5. Correlation is invariant to scale, so correlation-based results are unaffected, but amplitude-based measures such as tSNR, percent signal change and GLM betas were affected.)
+The kernel is normalised to sum to one, preserving constant signal levels away from the run boundaries.
 
-The kernel spans +/- 4 sigma and is truncated at the run boundaries, so edge effects may be present in the first and last ~4 sigma of the run.
+The kernel extends to approximately +/- 4 SIGMA. At the beginning and end of the run, part of the kernel falls outside the available data, which may attenuate values within approximately 4 SIGMA of each boundary.
 
 For frequency-domain bandpass filtering use fmri_bandpassfilter instead.
 

@@ -23,7 +23,7 @@ Inputs
 ------
 
 - **DATA** -- fMRI data, vectorized (228453 x n) or volume (91x109x91xn). Binary or continuous values; each column is rendered separately.
-- **LEVEL** -- Isosurface threshold level. Default: 0.9
+- **LEVEL** -- Isosurface threshold level. Default: 0.1
 - **SURFALPHA** -- Opacity of activation surface. Default: 1
 - **COLOR** -- N x 3 colormap matrix; row k = colour for data column k. Default: [1 0 0; 0 1 0; 0 0 1; 1 1 0; 1 0 1; 0 1 1]
 - **MASKALPHA** -- Opacity of the transparent brain shell. Default: 0.08

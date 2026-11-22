@@ -6,7 +6,7 @@ Threshold-free cluster enhancement (TFCE) of a statistical map.
 Description
 -----------
 
-Computes the TFCE score for each voxel in a statistical map. TFCE integrates cluster extent and peak height across all possible thresholds, avoiding the need to choose a fixed cluster-forming threshold. Higher TFCE scores reflect voxels that are both part of large clusters and have high signal intensity.
+Computes a TFCE score at each voxel by combining signal height with the spatial extent of the cluster containing it across a range of thresholds. This avoids selecting a single cluster-forming threshold. High scores indicate strong values supported by spatially extensive signal.
 
 **The TFCE statistic is defined as:**
 

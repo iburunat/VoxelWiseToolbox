@@ -17,8 +17,8 @@ Calculates the functional CNR per unit time (fCNR), defined as the ratio of the 
    Here delta-St is the time-dependent signal change, operationalised for a
    continuous (naturalistic) paradigm as the mean absolute scan-to-scan change
    of the voxel time series. Equivalently fCNR = fSNR * (delta-St / St), where
-   fSNR = St / sigma_t; the mean signal St cancels, so no division by the mean
-   is applied. For a block design delta-St would instead be the modelled
+   fSNR = St / sigma_t; the mean signal St cancels (no division by the mean
+   is applied). For a block design delta-St would instead be the modelled
    condition contrast; this successive-difference form is the continuous-data
    analogue, appropriate to the paradigms this toolbox targets.
 

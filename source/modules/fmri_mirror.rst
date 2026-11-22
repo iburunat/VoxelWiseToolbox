@@ -6,7 +6,9 @@ Flips a vectorized brain map left-to-right (sagittal mirror).
 Description
 -----------
 
-Flips the brain image along the x-axis (left-right) to produce its mirror image. Useful for testing laterality or creating symmetric averages (hemisphere-averaged FC maps, etc.).
+Flips a vectorized brain map left-to-right. This can be used to compare hemispheres or to create a bilateral average of a map.
+
+Because the MNI152 brain mask is not perfectly symmetric, some voxels near the mask boundary have no corresponding voxel on the opposite side. Their values are therefore lost during mirroring, and mirroring twice may not exactly reproduce the original map.
 
 Usage
 -----
@@ -32,11 +34,6 @@ Examples
 
    d_mirror = fmri_mirror(d);
    bilateral = (d + fmri_mirror(d)) / 2;   % bilateral average
-
-Notes
------
-
-the standard MNI152 brain mask is not perfectly left-right symmetric, so a voxel whose mirrored position falls outside the mask has its value dropped (that position is not in the 228453-voxel vector). Mirroring is therefore an exact involution only on the symmetric core of the mask, where both a voxel and its mirror are in-brain; near the asymmetric mask boundary, mirror(mirror(d)) can differ from d. This is a property of the mask, not of the flip.
 
 See Also
 --------

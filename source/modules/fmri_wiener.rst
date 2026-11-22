@@ -20,7 +20,7 @@ Inputs
 
 - **BOLD** -- Observed BOLD time series (N x 1). Will be mean-centred.
 - **HRF** -- Haemodynamic response function sampled at the same rate as BOLD (M x 1). Does not need to be the same length as BOLD; it will be zero-padded to match. A canonical HRF can be generated with fmri_doublegamma.
-- **NOISE_LEVEL** -- Regularisation strength: noise power relative to BOLD amplitude. Typical range: 0.05 to 0.20. Default: 0.1
+- **NOISE_LEVEL** -- Regularisation strength: the assumed noise magnitude as a fraction of the mean BOLD spectral amplitude, so the filter's noise term is (NOISE_LEVEL \* mean\|FFT(BOLD)\|)^2. Typical range: 0.05 to 0.20. Default: 0.1
 
 Outputs
 -------
@@ -44,6 +44,8 @@ Notes
 -----
 
 Results are sensitive to the noise_level parameter. Too low: noisy output. Too high: over-smoothed, response is blurred. Values of 0.05-0.20 are typically reasonable for standard fMRI data.
+
+The deconvolution is circular: the HRF tail wraps from the end of the run into the start, so the first numel(HRF) samples of NEURAL are unreliable. Discard them, or pad BOLD before calling.
 
 References
 ----------

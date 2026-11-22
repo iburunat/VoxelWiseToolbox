@@ -6,9 +6,9 @@ Generates N perceptually distinguishable RGB colours.
 Description
 -----------
 
-Produces a colormap whose entries are as far apart as possible in CIE L\*a\*b\* space, so that neighbouring labels in an atlas or cluster map remain easy to tell apart. This is intended for categorical data (atlas regions, Brodmann areas, cluster indices), NOT for continuous maps, where a smooth colormap such as jet or parula is appropriate.
+Produces a colormap with colours that are as perceptually different from each other as possible. Colour differences are measured in CIE L\*a\*b\* space, which approximates how humans perceive differences between colours. This makes neighbouring labels in an atlas or cluster map easier to distinguish. Intended for categorical data (atlas regions, Brodmann areas, cluster indices), NOT continuous maps, which are better displayed using smooth colormaps such as jet or parula.
 
-Evenly spaced hues (hsv(N)) become hard to distinguish beyond about a dozen entries: at N = 27 the closest pair differs by a Lab distance of under 4, which is essentially invisible. This function keeps the closest pair above about 30 at N = 27 and above 23 even at N = 52, the full Brodmann set.
+Standard colormaps such as hsv become difficult to distinguish when many colours are needed. By maximising the perceptual differences between colours, this function produces more distinguishable palettes, even with 27 or 52 colours.
 
 Usage
 -----
@@ -45,7 +45,7 @@ Examples
 Notes
 -----
 
-Colours are chosen by greedy farthest-point sampling over a random pool in RGB, with distances measured in Lab. Very dark and very light candidates are excluded so that every colour reads clearly against both the grey brain shell and a white figure background.
+Colours are selected to maximise their perceptual differences. Very dark and very light colours are avoided to ensure good visibility against the grey brain surface and white figure background.
 
 See Also
 --------

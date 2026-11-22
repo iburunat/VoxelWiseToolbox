@@ -25,7 +25,7 @@ Inputs
 - **EL** -- Elevation angle in degrees. Default: 10.
 - **PLANE** -- Slice orientation: 1=axial (default), 2=sagittal, 3=coronal.
 - **SLICES** -- Indices of visible slice positions (vector). E.g. [23 45 56].
-- **THICKNESS** -- Slab thickness for each slice (vector, same length as SLICES). Default: 3 for all slices.
+- **THICKNESS** -- Slab thickness: a scalar or one value per slice. Default: 3. Each slab extends away from the camera from its slice face. To tile adjacent slices, use [first diff(SLICES)] when viewed from the high side (axial EL >= 0, sagittal AZ < 90, coronal AZ >= 0), or [diff(SLICES) last] otherwise. Default: 3 for all slices.
 - **STACKDIR** -- Cake stacking: 1=vertical (default), 2=horizontal.
 - **MASKALPHA** -- Brain shell opacity (0=invisible, 1=opaque). Default: 0.
 - **CLIMITS** -- Colour axis limits [min max].
@@ -33,8 +33,6 @@ Inputs
 - **INTERSLICE** -- Gap between slabs, as a PERCENTAGE of slab size along the stacking direction (0 = slabs touch). Default: 2.
 - **CMAP** -- Colormap. Default: fmri_divmap(256). N x 3 matrix : used as given if it has at least 64 rows; fewer rows are treated as anchor colours and expanded with fmri_makecmap. scalar       : shorthand for a grey-yellow-red ramp starting at that grey level, i.e. [c c c; 1 1 0; 1 0 0].
 - **SURFMATERIAL** -- Surface reflectance: 'metal' (default), 'dull', or 'shiny'.
-
-Alternatively pass a parameter struct P from fmri_makevizpar as the second argument. Fields used: az, el, plane, slices, thickness, stackdir, maskalpha, climits, light, interslice, cmap, surfmaterial. Other fields are ignored.
 
 Examples
 --------
@@ -47,5 +45,5 @@ Examples
 See Also
 --------
 
-:doc:`fmri_show3d <fmri_show3d>` · :doc:`fmri_showcortex <fmri_showcortex>` · :doc:`fmri_showslices <fmri_showslices>`
+:doc:`fmri_show3d <fmri_show3d>` · :doc:`fmri_showcortex <fmri_showcortex>` · :doc:`fmri_showslices <fmri_showslices>` · :doc:`fmri_colorbar <fmri_colorbar>`
 

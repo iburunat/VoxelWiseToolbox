@@ -10,13 +10,9 @@ Measures the bilateral symmetry of a brain mask by computing the Dice coefficien
 
 .. code-block:: matlab
 
-   Dice = 2 * |A ∩ mirror(A)| / (|A| + |mirror(A)|)
+   Dice = 2 * |A n mirror(A)| / (|A| + |mirror(A)|)      (n = intersection)
 
-**Because \|A\| = \|mirror(A)\| always, this simplifies to:**
-
-.. code-block:: matlab
-
-   Dice = |A ∩ mirror(A)| / |A|
+The MNI152 brain mask is not perfectly symmetric, so voxels whose mirrored position falls outside it are dropped by fmri_mirror and the two masks can differ in size. The full formula above is therefore used; the symmetric shortcut \|A n mirror(A)\| / \|A\| would underestimate Dice.
 
 Usage
 -----

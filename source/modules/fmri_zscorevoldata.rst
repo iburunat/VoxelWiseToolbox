@@ -6,7 +6,7 @@ Voxelwise z-scoring of fMRI time series.
 Description
 -----------
 
-Standardises each voxel time series to zero mean and unit variance (z-score), operating independently at each voxel. Matches MATLAB's zscore(d, 0, 2) for voxels with non-zero variance. Constant voxels (zero variance) are set to 0 here rather than left as NaN; raw zscore() computes 0/0 = NaN for them, so the two differ in that one case, deliberately, to keep the output safe for downstream GLM and correlation.
+Standardises each voxel time series independently to zero mean and unit standard deviation. Constant voxels have no temporal variation and are set to zero rather than NaN, making the output suitable for subsequent GLM and correlation analyses.
 
 Usage
 -----

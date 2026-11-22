@@ -6,7 +6,7 @@ Displays integer-labelled brain data as a coloured slice mosaic.
 Description
 -----------
 
-Renders an integer-valued brain map (e.g. atlas parcellations, cluster indices, network labels) as a mosaic of 2D slices, assigning each integer label a distinct flat colour. This is the integer-map counterpart of fmri_showslices, which is for continuous maps (z, r, t, ...).
+Displays an integer-valued brain map, such as an atlas, cluster map or network parcellation, as a slice mosaic. Each non-zero integer label is shown in a distinct colour. This is the integer-map counterpart of fmri_showslices, which is for continuous maps (z, r, t, ...).
 
 Usage
 -----
@@ -15,6 +15,7 @@ Usage
 
    fmri_showslices_int(data)
    fmri_showslices_int(data, plane, interval, color, txt, overlayalpha)
+   fmri_showslices_int(data, plane, interval, color, txt, overlayalpha, labels)
    fmri_showslices_int(data, p)        % p from fmri_makevizpar
 
 Inputs
@@ -29,8 +30,9 @@ Inputs
   - **sliced** -- z for an axial mosaic, x for a sagittal one - matching the coordinates fmri_regiontable reports, not the 1-91 grid index.
 
 - **OVERLAYALPHA** -- Opacity of the label colours over the brain shell (0-1). Default: 1 (opaque).
+- **LABELS** -- Cell array of strings, one per label, naming label 1 to max(label). Default: {} (no key). When given, a key is drawn in a panel to the right of the mosaic, using the same colours as the map, and the figure widens to make room. About 12 entries is the practical limit; beyond that the key is still drawn, with a warning, but is too dense to read.
 
-Alternatively, pass a parameter struct P from fmri_makevizpar as the second argument. Fields used: plane, interval, color, txt (as TXT), overlayalpha.
+Alternatively, pass a parameter struct P from fmri_makevizpar as the second argument. Fields used: plane, interval, color, txt (as TXT), overlayalpha, labels.
 
 Examples
 --------
@@ -38,6 +40,7 @@ Examples
 .. code-block:: matlab
 
    fmri_showslices_int(atlas_map)
+   fmri_showslices_int(region_map, 1, 2, colors, 1, 0.85, region_names)
 
    % Cluster map from fmri_findclusters, one distinct colour per cluster
    clusters = fmri_findclusters(t_map > 4.14, 18);
@@ -49,7 +52,9 @@ Examples
 Notes
 -----
 
-Coronal display (plane = 3) is documented in fmri_makevizpar for consistency across the toolbox but is not yet implemented here; passing plane = 3 raises an error rather than silently drawing nothing. Requires graybrain.mat (the greyscale template shell) on the path.
+Coronal display (plane = 3) is documented in fmri_makevizpar for consistency across the toolbox but is not yet implemented here; passing plane = 3 raises an error.
+
+Requires graybrain.mat (the greyscale template shell) on the path.
 
 See Also
 --------

@@ -24,7 +24,7 @@ Inputs
 - **VOLDATA** -- 3D (91x109x91) or 4D (91x109x91xT) volume, or vectorized (228453 x T) data. Vectorized input is converted automatically.
 - **FILENAME** -- Output filename string. The .nii extension is added if absent. Default: 'output'
 - **VOXELSIZE** -- Voxel dimensions in mm, [dx dy dz]. Default: [2 2 2]
-- **ORIGIN** -- Voxel index of MNI coordinate [0 0 0], [ox oy oz]. Default: [45 63 36]  (standard 2mm MNI152 origin, 0-indexed)
+- **ORIGIN** -- Voxel index of MNI coordinate [0 0 0], [ox oy oz], 1-based (MATLAB convention) - make_nii writes it to the Analyze "originator" field, which is 1-based, so a 0-based value shifts the whole image by one voxel. Default: [46 64 37]  (standard 2mm MNI152 origin)
 
 Examples
 --------
@@ -33,7 +33,7 @@ Examples
 
    fmri_export(statmap, 'tmap')
    fmri_export(statmap, 'tmap_1mm', [1 1 1])
-   fmri_export(voldata, 'bold', [2 2 2], [45 63 36])
+   fmri_export(voldata, 'bold', [2 2 2], [46 64 37])
 
 See Also
 --------

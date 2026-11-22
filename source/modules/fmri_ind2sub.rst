@@ -30,7 +30,7 @@ Examples
 
 .. code-block:: matlab
 
-   sub  = fmri_ind2sub(114227);        % centre of the brain
+   sub  = fmri_ind2sub(91567);        % MNI origin [0 0 0].
    subs = fmri_ind2sub([1000; 5000; 100000]);
    mni  = fmri_sub2mni(fmri_ind2sub(peak_voxel));
 

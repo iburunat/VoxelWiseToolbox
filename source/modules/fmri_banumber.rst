@@ -43,11 +43,7 @@ Examples
 Notes
 -----
 
-Brodmann areas cover CORTEX ONLY, so 0 is a common and correct answer: it means the voxel has no Brodmann label, not that the lookup failed. About 24% of the 228453-voxel mask carries a label. The rest is white matter, cerebellum and subcortical structures, which have no Brodmann area at all, plus the gaps the Talairach Daemon leaves between adjacent areas, which it draws conservatively rather than extrapolating to a boundary.
-
-A single coordinate can therefore return 0 while sitting a few millimetres from the area you expect.
-
-Area 13 is insular cortex. Some sources state that areas 12-16 are absent in humans; that follows from their not appearing on Brodmann's published surface maps, since the insula is buried in the Sylvian fissure, rather than from their absence in his material. He recorded four human insular areas and identified them as 13-16 in 1914.
+Brodmann areas cover CORTEX ONLY. Zero (0) means the voxel has no Brodmann label (not that the lookup failed). About 24% of the 228453-voxel mask carries a label. Area 13 is insular cortex. Some sources state that areas 12-16 are absent in humans; that follows from their not appearing on Brodmann's published surface maps, since the insula is buried in the Sylvian fissure. He recorded four human insular areas and identified them as 13-16 in 1914. This atlas includes label 13 but not 14-16. Of its 47 labels, 42 appear in the brain mask; the absent five are 12, 14, 15, 16 and 26.
 
 Atlas source: Talairach Daemon (Lancaster et al., 1997, 2000), as distributed with WFU PickAtlas (Maldjian et al., 2003). Redistribution permitted by J. Maldjian, September 2026.
 
