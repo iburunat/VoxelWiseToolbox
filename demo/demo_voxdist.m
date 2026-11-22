@@ -1,4 +1,4 @@
-% DEMO_VOXDIST  Euclidean distance between brain voxels
+%% DEMO_VOXDIST  Euclidean distance between brain voxels
 %
 % Demonstrates fmri_voxdist by computing:
 %   1. Distance between two MNI coordinates
@@ -10,9 +10,15 @@
 %
 % See also: fmri_voxdist, fmri_spheremask, fmri_regionmask, fmri_mni2sub
 
-fmritoolbox_setup;
+clear; close all;
+if exist('fmritoolbox_setup', 'file')
+    fmritoolbox_setup;
+else
+    error('Please run fmritoolbox_setup.m from the toolbox root first.');
+end
+fprintf('=== VoxelWise Toolbox VOXDIST demo ===\n\n');
 
-% Voxel count is taken from the template rather than hardcoded, so the demo
+%% Voxel count is taken from the template rather than hardcoded, so the demo
 % survives any change of reference space.
 load standard_brain % supplies br, the 91x109x91 binary brain mask
 n_voxels = nnz(br);
@@ -34,13 +40,17 @@ fprintf('Distance between PCC and rIFG: %.1f mm\n', d);
 fprintf('Computing distance map from PCC seed...\n');
 D = fmri_voxdist(ind1, 1:n_voxels);   % 1 x n_voxels
 
-% THRESHOLD = 0 draws every FINITE voxel, including the seed itself at distance
-% 0. A positive threshold would hide the seed and its immediate neighbourhood,
-% which is the most informative part of a distance map. This is the case the
-% THRESHOLD == 0 rule exists for: zero is a real measurement here, not padding.
+% Sanity check against the distance map: the seed-to-seed distance must be 0
+% and the map's maximum must not exceed the brain's own diagonal extent.
+fprintf('  Seed-to-seed distance:      %.1f mm (expect 0)\n', fmri_voxdist(ind1, ind1));
+fprintf('  Max distance from seed:     %.1f mm\n', max(D));
+
+% THRESHOLD = 0 draws every finite voxel, including the seed at distance 0.
+% A positive threshold would hide the seed's neighbourhood, the most
+% informative part of the map.
 figure('Name', 'Distance map from PCC');
-fmri_showslices(D', 1, 2, [0 100], [], [], 1, 'hot', 0);
-title('Distance from PCC [0 -51 27] (mm)');
+fmri_showslices(D', 1, 2, [0 max(D)], [], [], 1, parula, 0);
+title(sprintf('Distance from PCC [0 -51 27] (mm, max %.0f)', max(D)));
 
 %% --- 3. Pairwise distances within left hippocampus -----------------------
 % Region name comes from the atlas rather than a hardcoded comment, so the
@@ -58,11 +68,6 @@ mean_d   = mean(D_roi(D_roi > 0));
 fprintf('  %s max diameter: %.1f mm\n', roi_name{1}, max_diam);
 fprintf('  Mean inter-voxel distance:  %.1f mm\n', mean_d);
 
-% Sanity check against the distance map: the seed-to-seed distance must be 0
-% and the map's maximum must not exceed the brain's own diagonal extent.
-fprintf('  Seed-to-seed distance:      %.1f mm (expect 0)\n', fmri_voxdist(ind1, ind1));
-fprintf('  Max distance from seed:     %.1f mm\n', max(D));
-
 figure('Name', 'Pairwise distance matrix');
 imagesc(D_roi);
 colorbar;
@@ -70,5 +75,4 @@ title(sprintf('Pairwise distances within %s (max = %.1f mm)', roi_name{1}, max_d
 xlabel('Voxel index'); ylabel('Voxel index');
 axis square;
 
-
-  
+fprintf('\n=== VOXDIST demo complete ===\n');

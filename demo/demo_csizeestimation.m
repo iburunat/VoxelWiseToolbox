@@ -1,4 +1,4 @@
-% DEMO_CSIZEESTIMATION  Cluster-size correction by the Ledberg method
+%% DEMO_CSIZEESTIMATION  Cluster-size correction by the Ledberg method
 %
 % Demonstrates the cluster-extent correction of Ledberg et al. (1998) in four
 % steps:
@@ -23,13 +23,12 @@
 % Functions demonstrated:
 %   fmri_acfestimate, fmri_csdist, fmri_csthreshold, fmri_cleanclusters
 %
-% RUNTIME AND MEMORY. fmri_acfestimate reads participants from disk, so this
-% demo writes temporary files and removes them at the end. Simulating one
-% participant allocates the full 91x109x91xT grid before masking, which at
-% T = 100 is about 720 MB in memory for roughly 180 MB on disk. Step 2 is the
-% slow one - it convolves and cluster-labels a whole volume per null map, and
-% reports its own progress and ETA. Every setting below is small; real use
-% needs far more permutations at each stage.
+% Runtime and memory:
+%   The demo writes temporary participant files and removes them at the end.
+%   Each simulated participant requires about 720 MB during generation and
+%   about 180 MB on disk. Building the null distribution is the slowest step.
+%   The permutation counts are kept low for speed; use substantially more for
+%   final inference.
 %
 % References:
 %   Ledberg, A., Akerman, S. & Roland, P.E. (1998). Estimation of the
@@ -39,7 +38,12 @@
 %           fmri_cleanclusters, fmri_tfce
 
 clear; close all;
-fmritoolbox_setup;
+if exist('fmritoolbox_setup', 'file')
+    fmritoolbox_setup;
+else
+    error('Please run fmritoolbox_setup.m from the toolbox root first.');
+end
+
 fprintf('=== VoxelWise Toolbox: cluster-size correction demo ===\n\n');
 
 %% --- Parameters -----------------------------------------------------------
@@ -57,7 +61,6 @@ rng(7);
 % fmri_csdist recommends, so it will warn. Use substantially more null maps
 % for final inference.
 
-% Voxel count from the template rather than hardcoded.
 load standard_brain
 n_vox = nnz(br);
 
@@ -73,13 +76,9 @@ fprintf('These are SMALL for speed. Real use needs far more permutations.\n\n');
 datapath = fullfile(tempdir, sprintf('vw_csize_demo_%d', feature('getpid')));
 if ~exist(datapath, 'dir'), mkdir(datapath); end
 
-% The noise is SPATIALLY SMOOTHED before saving. Cluster-size correction is a
-% response to spatial autocorrelation, so independent voxel noise - whose ACF
-% is a spike at the origin - would leave the procedure with nothing to do. Real
-% fMRI is smooth, from acquisition, registration and any explicit smoothing.
-%
-% The Gaussian is applied as three 1D convolutions, one per axis, rather than
-% as one 3D kernel.
+% Smooth the noise first: unsmoothed voxel noise would leave cluster-size
+% correction nothing to correct, and real fMRI is smooth anyway. 
+% Applied as three 1D convolutions, one per axis.
 fwhm_vox = 3;                                  % smoothing FWHM in voxels
 sig      = fwhm_vox / sqrt(8*log(2));
 kw       = ceil(3*sig);
@@ -128,7 +127,8 @@ r = 1;
 % well inside it, so the x-axis follows the data.
 last_nz = find(any(D{r} > 1e-6, 2), 1, 'last');
 if isempty(last_nz), last_nz = size(D{r}, 1); end
-x_hi = min(size(D{r},1), max(10, ceil(1.5*last_nz)));
+x_hi = min(size(D{r},1), max(10, ceil(1.15*last_nz)));
+
 
 figure('Name', 'Cluster-size null distribution');
 plot(D{r}, 'LineWidth', 2);
@@ -144,7 +144,7 @@ grid on;
 fprintf('Step 3: Extracting critical cluster sizes...\n');
 [CSIZE, report] = fmri_csthreshold(D, si_alpha, cs_alpha);
 
-fprintf(['\n  Minimum surviving cluster sizes, regressor 1' ...
+fprintf(['\n  Minimum surviving cluster sizes, regressor 1 ' ...
          '(rows = per-tail alpha, cols = FWER):\n']);
 disp(CSIZE{1});
 fprintf('%s\n', report);
@@ -184,8 +184,10 @@ kept    = clean > 0;
 removed = z_thresh & ~kept;
 effect  = double(kept) - double(removed);
 
-figure('Name', 'What cluster correction removed');
+figure('Name', 'What cluster correction removed (axial slices)');
 fmri_showslices(effect, 1, 2, [-1 1], [], [], 1, [], 0.5);
+figure('Name', 'What cluster correction removed (glass brain)');
+fmri_show3d(effect)
 title(sprintf('Cluster correction (>= %d voxels): red kept (%d), blue removed (%d)', ...
       csize_use, nnz(kept), nnz(removed)));
 

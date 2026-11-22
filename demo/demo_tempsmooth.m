@@ -1,4 +1,4 @@
-% DEMO_TEMPSMOOTH  Temporal Gaussian smoothing of fMRI time series
+%% DEMO_TEMPSMOOTH  Temporal Gaussian smoothing of fMRI time series
 %
 % Demonstrates fmri_tempsmooth by applying temporal smoothing to a simulated
 % fMRI time series with different sigma values and comparing the effect on
@@ -12,7 +12,13 @@
 %
 % See also: fmri_tempsmooth, fmri_bandpassfilter, fmri_detrend
 
-fmritoolbox_setup;
+clear; close all;
+if exist('fmritoolbox_setup', 'file')
+    fmritoolbox_setup;
+else
+    error('Please run fmritoolbox_setup.m from the toolbox root first.');
+end
+fprintf('=== VoxelWise Toolbox temporal smoothing demo ===\n\n');
 
 %% --- Simulate a noisy fMRI time series ------------------------------------
 TR  = 2;
@@ -56,16 +62,25 @@ plot(data(1,:), 'Color', [0.7 0.7 0.7]);
 title('Original: clean signal (black) vs noisy voxel (gray)');
 xlabel('Scan'); ylabel('Amplitude'); axis tight;
 
-for k = 1:length(sigma_values)
-    smoothed = fmri_tempsmooth(data, sigma_values(k), TR);
-    subplot(length(sigma_values)+1, 1, k+1);
+r_values = zeros(size(sigma_values));
+ax = gobjects(size(sigma_values));
+
+for k = 1:numel(sigma_values)
+    smoothed    = fmri_tempsmooth(data, sigma_values(k), TR);
+    r_values(k) = fmri_corrmat(smoothed(1,:)', bold);
+
+    ax(k) = subplot(numel(sigma_values)+1, 1, k+1);
     plot(bold, 'k', 'LineWidth', 2); hold on;
     plot(smoothed(1,:), 'b');
     title(sprintf('\\sigma = %g s (%.1f scans), r with clean signal = %.3f', ...
-          sigma_values(k), sigma_values(k)/TR, ...
-          fmri_corrmat(smoothed(1,:)', bold)));
+          sigma_values(k), sigma_values(k)/TR, r_values(k)));
     xlabel('Scan'); ylabel('Amplitude'); axis tight;
 end
+
+% One y-range for all smoothed panels, so noise reduction and signal
+% attenuation can be compared across them.
+lims = cell2mat(get(ax, 'YLim'));
+set(ax, 'YLim', [min(lims(:,1)) max(lims(:,2))]);
 
 %% --- Effect on frequency content ------------------------------------------
 % abs(fft(...)) is the MAGNITUDE spectrum; power would be the squared magnitude.
@@ -82,11 +97,8 @@ plot(freq_hz, smooth10_fft(1:T/2+1), 'r');
 legend('Raw', 'sigma = 5 s', 'sigma = 10 s');
 title('Magnitude spectrum: effect of temporal smoothing');
 xlabel('Frequency (Hz)'); ylabel('Magnitude'); axis tight;
-fprintf('\n  sigma (s)   r with clean signal\n');
-
-for k = 1:length(sigma_values)
-    sm = fmri_tempsmooth(data, sigma_values(k), TR);
-    r_values(k) = fmri_corrmat(sm(1,:)', bold);
+fprintf('  sigma (s)   r with clean signal\n');
+for k = 1:numel(sigma_values)
     fprintf('  %6.1f      %.3f\n', sigma_values(k), r_values(k));
 end
 
@@ -100,3 +112,5 @@ fprintf(['\nAmong the values tested, agreement with the clean signal is highest 
 'the signal and noise.\n'], sigma_values(best_idx));
 
 warning(warn_state);          % restore the ambiguous-orientation notice
+
+fprintf('\n=== Temporal smoothing demo complete ===\n');
