@@ -10,13 +10,11 @@ function patch_nifti_version_check(nifti_dir)
 %        directchar = 'uchar=>char';
 %     end
 %
-% This was written when MATLAB versions looked like '7.1'. Modern versions
-% report '9.14' (R2023a), '23.2' (R2023b), '24.1' (R2024a), etc. Taking only
-% the first character means R2023b and every release since (23.x, 24.x, 25.x)
-% evaluate str2num('2') < 6 as TRUE and wrongly select the legacy '*char'
-% format, corrupting header text fields such as descrip and magic. Because
-% 'magic' is how the reader distinguishes NIfTI from Analyze, this can cause
-% subtle downstream failures on current MATLAB.
+% The original check reads only the first digit of the MATLAB version. For
+% releases numbered 23.x or later, this incorrectly interprets the version as
+% earlier than 6 and selects the legacy '*char' format. This can corrupt NIfTI
+% header fields such as 'descrip' and 'magic', potentially causing the file to
+% be misidentified or read incorrectly.
 %
 % This script rewrites every occurrence to parse the full major version:
 %

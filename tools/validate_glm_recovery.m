@@ -1,73 +1,56 @@
 function runs = validate_glm_recovery()
 % validate_glm_recovery  Scores the two-level pipeline against analytic ground truth.
 %
-% Runs the toolbox's two-level analysis on simulated cohorts whose answer is
-% known in closed form, and reports precision and recall against that answer.
-% This is the test behind Section 5.2 of the toolbox paper; demo_glm shows the
-% same workflow without the scoring.
+% Runs the toolbox's two-level analysis on simulated cohorts with known
+% analytic ground truth, then measures recovery using precision and recall.
+% This validation underlies Section 5.2 of the toolbox paper; demo_glm shows
+% the same workflow without scoring.
 %
-% WHY THIS IS NOT CIRCULAR
-%   The ground truth is never obtained by running an analysis function. It is
-%   computed from the generative parameters themselves - the source weights,
-%   the time-course Gram matrix and the noise level - as
+% INDEPENDENT GROUND TRUTH
+%   The expected voxel-to-source correlations are derived directly from the
+%   simulation parameters and returned by fmri_simdata in SIM.TRUTH:
 %
-%       truth(v,k) = (S*G)(v,k) / sqrt( S(v,:)*G*S(v,:)' + (sigma/a)^2 )
+%       truth(v,k) = (S*G)(v,k) / sqrt(S(v,:)*G*S(v,:)' + (sigma/a)^2)
 %
-%   which fmri_simdata returns as sim.truth. The quantity being validated and
-%   the quantity validating it share no code path.
+%   No analysis function is used to calculate the ground truth, so the
+%   validation is independent of the pipeline being tested.
 %
-% WHAT IS AND IS NOT CORRECTED
-%   Scoring uses the voxel-level threshold (p < 0.001) plus a fixed minimum
-%   cluster extent, not either of the toolbox's cluster-level corrections.
-%   That is deliberate: the detectability cut-off below is derived at the same
-%   voxel threshold, so "should have been found" and "was found" use the same
-%   bar, and what the figures characterise is the ESTIMATION chain. Applying a
-%   correction would move both sides at once.
+% THRESHOLDING
+%   Detected voxels must meet p < 0.001 and the fixed minimum cluster
+%   extent. No cluster-level correction is applied because the
+%   detectability threshold is derived at the same voxel-level threshold.
+%   This keeps the expected and observed detection criteria directly
+%   comparable. The simulated noise is spatially smoothed to 3 voxels FWHM,
+%   so detection is scored on data with realistic spatial autocorrelation
+%   rather than on spatially independent noise.
+% 
+% GROUND-TRUTH DEFINITIONS
+%   LATENT represents the unperturbed simulation design. POPULATION represents
+%   the expected result across the simulated participants. This function uses
+%   POPULATION because it evaluates group-level analysis; use LATENT when
+%   evaluating whether the simulator generated the intended design.
 %
-% GROUND-TRUTH DEFINITION
-%   fmri_simdata returns two and does not choose between them:
+% SCORING CRITERIA
+%   DESIGNED evaluates recovery of the intended network contribution.
+%   DETECTABLE evaluates all voxels whose expected correlation with the task
+%   time course exceeds the detection threshold, regardless of which source
+%   produces it.
 %
-%     latent      the base design, before participant perturbation. Answers
-%                 "did the simulator generate what was asked for?".
-%     population  the expected value of the statistic a group test actually
-%                 computes, pooled across the participants simulated. Answers
-%                 "did the analysis recover the effect in this cohort?".
-%
-%   POPULATION is used here, because this validates an ANALYSIS. The detection
-%   threshold is derived from the between-participant sampling distribution,
-%   and scoring a sampling-based threshold against a variability-free latent
-%   effect would put the two sides on different footings. Set TRUTH_DEFINITION
-%   to 'latent' to validate the simulator instead; the difference between them
-%   is the attenuation that participant perturbation induces.
-%
-% TWO YARDSTICKS, DELIBERATELY
-%   DESIGNED    the designed network's contribution alone. Asks whether the
-%               analysis found the network that was asked for.
-%   DETECTABLE  everything whose expected correlation with the task time
-%               course clears the threshold, whatever source produces it. A
-%               voxel genuinely correlating with the task regressor through
-%               chance correlation between sources SHOULD be detected;
-%               scoring it as an error measures the simulator's luck rather
-%               than the method's accuracy.
-%
-%   Both are reported, and the gap between them is source leakage. With the
-%   orthogonalisation fmri_simdata applies, that gap is normally zero and the
-%   two yardsticks agree exactly - which is itself worth seeing, because it
-%   says the chance correlations the DETECTABLE yardstick exists to absorb
-%   are not there to absorb. A run where they diverge means the
-%   orthogonalisation has stopped doing its job.
+%   Any difference between these criteria reflects contributions from sources
+%   outside the designed network. They should normally agree when the
+%   independent source time courses remain orthogonal.
 %
 % Usage:
 %   validate_glm_recovery                      % both seeds, as reported in the paper
 %   runs = validate_glm_recovery;              % also returns the struct that
-%                                          % make_figure5 takes
+%                                              % paper's make_figure4 input
 %
 % Outputs:
 %   RUNS   - 1 x numel(SEEDS) struct array carrying each run's ground truth,
 %            detected map, t map, detectability cut-off, df and seed. Pass it
-%            straight to make_figure5.
+%            straight to make_figure4.
 %
-% See also: fmri_simdata, demo_glm, make_figure5, DESIGN_NOTE_ground_truth.md
+% See also: fmri_simdata, demo_glm, make_figure4, DESIGN_NOTE_ground_truth.md
 
 close all;
 if exist('fmritoolbox_setup', 'file')
@@ -84,17 +67,13 @@ n_sources        = 10;
 n_network        = 3;
 alpha            = 0.001;
 min_extent       = 20;
+noise_fwhm       = 3;      % spatial smoothness of the noise, voxels FWHM (0 = white)
 truth_definition = 'population';     % 'latent' or 'population'
 
-% PHASE_STRENGTH controls inter-participant similarity by FFT phase
-% perturbation: 0 = identical participants, 1 = fully decorrelated. The
-% simulator's default of 0.2 gives inter-participant r ~ 0.98, which is
-% unrealistically clean and has a concrete consequence: because every
-% participant is a mild perturbation of ONE base set of time courses, any
-% chance correlation between sources is reproduced in all of them, survives
-% group averaging and appears as a highly significant cluster. 0.6 gives a
-% mean pairwise correlation near 0.81, which decorrelates the background
-% sources and makes this a harder test than the default would be.
+
+% PHASE_STRENGTH controls how much participants differ. The value 0.6 gives
+% lower inter-participant similarity than the default 0.2, making recovery
+% more challenging and reducing shared chance correlations between sources.
 phase_strength = 0.6;
 
 % Two seeds. Section 5.2 reports both: the scores should be stable even when
@@ -103,11 +82,13 @@ phase_strength = 0.6;
 seeds = [123 456];
 
 fprintf('=== two-level recovery against analytic ground truth ===\n');
-fprintf('truth definition: %s | phase_strength %.2f | N = %d\n\n', ...
-        upper(truth_definition), phase_strength, n_subj);
+fprintf('truth definition: %s | phase_strength %.2f | N = %d | noise FWHM %g\n\n', ...
+        upper(truth_definition), phase_strength, n_subj, noise_fwhm);
 
 runs = struct('truth', {}, 'r_task', {}, 'detected', {}, 't_map', {}, ...
               'r_detect', {}, 'df', {}, 'seed', {});
+
+
 
 for k = 1:numel(seeds)
     fprintf('--- seed %d ---\n', seeds(k));
@@ -116,7 +97,7 @@ for k = 1:numel(seeds)
     % --- simulate ------------------------------------------------------
     [X_comp, S_3D, W, svd_info, ~, sim] = fmri_simdata( ...
             n_sources, n_subj, n_scans, TR, [], [], ...
-            phase_strength, n_network, 0, false);
+            phase_strength, n_network, 0, false, noise_fwhm);
     n_voxels = sim.mask.n_voxels;
 
     % --- first level ---------------------------------------------------
@@ -133,27 +114,25 @@ for k = 1:numel(seeds)
     clean_map = fmri_cleanclusters(double(p_grp < alpha), min_extent, 0);
     detected  = clean_map > 0;
 
-    % --- detectability cut-off, derived rather than guessed -------------
-    % A voxel is detectable when its expected correlation would clear the
-    % group threshold given the observed between-participant variability:
-    %     t = atanh(r)/(sd_z/sqrt(N))  =>  r_detect = tanh(t_crit*sd_z/sqrt(N))
-    % This uses only the NOISE level, never the effect, so it is a power
-    % calculation rather than a circular fit. Scoring against a fixed,
-    % arbitrary cut-off would measure the choice of cut-off instead.
+    % --- detectability cut-off -----------------------------------------
+    % A voxel is considered detectable when its expected correlation reaches the
+    % group-level threshold, given the observed between-participant variability:
+    %
+    %     r_detect = tanh(t_crit * sd_z / sqrt(N))
+    %
+    % The threshold is derived from variability rather than chosen arbitrarily,
+    % keeping the expected and observed detection criteria comparable.
     sd_z     = std(z_maps, 0, 2);
     t_crit   = fmri_p2t(alpha, df_group);
     r_detect = tanh(t_crit * median(sd_z) / sqrt(n_subj));
 
-    % --- the two yardsticks --------------------------------------------
-    % Both come from the simulator via sim, so the polarity rule, the
-    % signal and noise constants and the expected-correlation formula are
-    % never reproduced here. Those were silent couplings: if the simulator
-    % changed, a test that rebuilt them broke without warning.
+    % --- scoring yardsticks --------------------------------------------------
+    % Both ground-truth maps come from SIM, keeping their polarity, signal and
+    % noise assumptions consistent with the simulation.
     %
-    % Under the POPULATION definition both are evaluated per participant and
-    % pooled in atanh space afterwards. They cannot be computed from a
-    % participant-averaged Gram: r_p is a nonlinear function of G^(p), so
-    % f(pooled G) ~= pooled f(G).
+    % For POPULATION truth, expected correlations are calculated separately for
+    % each participant and then pooled in Fisher-z space. The source-correlation
+    % matrices cannot be averaged first because the calculation is nonlinear.
     S_brain = reshape(S_3D, [], n_sources);
     S_brain = S_brain(sim.mask.logical(:), :);
     J       = sim.design.network.idx;
@@ -181,12 +160,9 @@ for k = 1:numel(seeds)
     end
 
     % --- score against the DESIGNED network -----------------------------
-    % Sign-aware: a surviving voxel counts as a hit only if the t statistic
-    % matches the ground truth's polarity there. fmri_simdata does not give
-    % every network blob the same sign - the rule lives in the simulator and
-    % is reported as sim.design.network.sign - so treating the network as one
-    % undifferentiated mask would make the anti-correlated blob look like a
-    % false positive when it is a correct detection with the opposite sign.
+    % A detection counts as a hit only when the t-statistic has the expected
+    % sign. This ensures that positively and negatively driven network sources
+    % are evaluated correctly.
     truth_pos = r_designed >  r_detect;
     truth_neg = r_designed < -r_detect;
     truth_any = truth_pos | truth_neg;
@@ -195,13 +171,10 @@ for k = 1:numel(seeds)
     fp = nnz(detected & ~truth_any);
     fn = nnz(~detected & truth_any);
 
-    % Which false positives are the analysis's fault? A voxel whose expected
-    % correlation with the task time course clears the threshold is one a
-    % correct analysis should find, whichever source produces it. r_task
-    % answers this directly - no confound mask, no second threshold, no loop
-    % over sources. Printed unconditionally, including when it is zero: a
-    % figure that only appears when leakage exists cannot be compared across
-    % runs.
+    % Separate false positives caused by source leakage from unexpected
+    % detections. A voxel is counted as leakage when its expected correlation
+    % with the task time course exceeds the detection threshold, even though it
+    % lies outside the designed network.
     fp_leak  = nnz(detected & ~truth_any & (abs(r_task) >  r_detect));
     fp_unexp = nnz(detected & ~truth_any & (abs(r_task) <= r_detect));
     conf     = find(abs(sim.gram.latent(:, 1)) > r_detect);
@@ -239,16 +212,13 @@ for k = 1:numel(seeds)
                 tp2/(tp2+fp2), tp2/(tp2+fn2));
     end
 
-    % The false positives and false negatives are one phenomenon seen from
-    % two sides. Truth is defined AT the test's critical threshold, so voxels
-    % sitting near r_detect have roughly 50% power: about half of those just
-    % above it are missed and about half of those just below are detected.
-    % Both sets lie at the source margins. A recall of exactly 1.00 is
-    % therefore not attainable by construction, and the precision shortfall
-    % has the same origin - neither is a sensitivity failure.
+    % Voxels near the detection threshold are uncertain: some just above it may
+    % be missed, while some just below it may be detected. These boundary effects
+    % can reduce both precision and recall without indicating a systematic failure
+    % of the analysis.
     fprintf('\n');
 
-    % --- carry forward for make_figure5 ---------------------------------
+    % --- carry forward for make_figure4 ---------------------------------
     runs(k).truth    = r_designed;   % the map scored against, above
     runs(k).r_task   = r_task;
     runs(k).detected = detected;
@@ -260,9 +230,10 @@ for k = 1:numel(seeds)
     clear X_comp S_3D W svd_info sim z_maps
 end
 
-fprintf(['Scores should agree across seeds to two decimal places even ' ...
-         'where the\nground-truth extents differ several-fold; that ' ...
-         'invariance is what the source\northogonalisation in fmri_simdata ' ...
-         'exists to provide.\n\n']);
-fprintf('Pass RUNS to make_figure5 for the Section 5.2 figure.\n');
+fprintf(['Scores should agree across seeds to within 0.01 even where the\n' ...
+         'ground-truth extents differ several-fold; that invariance is what ' ...
+         'the source\northogonalisation in fmri_simdata exists to provide.\n\n']);
+
+fprintf('Pass RUNS to make_figure4 for the Section 5.2 figure.\n');
+
 end

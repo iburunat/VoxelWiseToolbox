@@ -9,31 +9,16 @@ function make_contents(toolbox_root, dryrun)
 %   make_contents(root)                % explicit root
 %   make_contents(root, true)          % dry run: report only, write nothing
 %
-% WHY GENERATE RATHER THAN HAND-MAINTAIN
-%   A hand-written Contents.m drifts. Before this generator existed, it listed
-%   69 functions while 86 were on disk - so 17 were invisible to `help
-%   voxelwiseToolbox`, and the count quoted in the manuscript was wrong. Nothing
-%   flagged it, because nothing was checking.
-%
-% WHAT IT ENFORCES
-%   The MODULES table below is the single source of truth for grouping, and
-%   every function in core/ must appear in it exactly once. If a function is
-%   added to core/ without being assigned a module, the generator ERRORS rather
-%   than quietly omitting it - which is the failure that produced the 69-vs-86
-%   discrepancy. Likewise a module entry naming a file that no longer exists is
-%   an error, so deletions cannot leave phantom entries behind.
-%
-%   core/private/ is not scanned. dir('core/*.m') does not descend, so the
-%   internal helpers are excluded automatically rather than by a rule someone
-%   has to remember.
+% WHY GENERATE CONTENTS.M
+%   Generating Contents.m prevents the function list from becoming outdated.
+%   Every public function in core/ must appear exactly once in MODULES; missing,
+%   duplicate or obsolete entries produce an error. Files in core/private/ are
+%   excluded automatically.
 %
 % H1 REQUIREMENTS
-%   MATLAB takes the H1 line from the FIRST comment line after the function
-%   declaration. Two failures are checked and reported:
-%     - no H1 at all, or code between the declaration and the comment block
-%       (fmri_corrvoldata had exactly this: `help` returned nothing)
-%     - an H1 that does not begin with the function name, which produces a
-%       Contents entry whose text does not match its own heading
+%   The first comment after each function declaration must begin with the
+%   function name. Missing or malformed H1 lines are reported because they
+%   produce incomplete Contents.m entries and poor MATLAB help output.
 %
 % See also: fmritoolbox_setup
 
@@ -50,34 +35,14 @@ if ~isfolder(core)
 end
 
 %% --- module table: the single source of truth for grouping -----------------
-% Order here is the order in Contents.m. Functions are listed in reading order
-% within a module, not alphabetically, so related ones sit together.
+% Module and function order determines their order in Contents.m. Functions
+% are grouped by task.
 %
-% Two module names carry a distinction worth stating, because an earlier pair
-% of names obscured it. Correlation IS statistics, so "Analysis" versus
-% "Statistics" named nothing. The real split is ESTIMATION versus INFERENCE:
-% the estimation module takes data and produces an EFFECT (an r-map, a
-% similarity matrix, a beta map), while the inference module takes an effect and
-% asks whether it is REAL (p-values, thresholds, multiple-comparison
-% correction). fmri_corrvoldata estimates; fmri_r2p infers.
-%
-% "Temporal preprocessing" is likewise specific on purpose: every function in it
-% operates along TIME, and the SPATIAL preprocessing functions - fmri_upsample,
-% fmri_downsample - are in the Space module. A
-% bare "Preprocessing" heading would send a reader looking for resampling to the
-% wrong place.
-%
-% Eight modules, reduced from an earlier eleven. I/O and the coordinate
-% functions are kept SEPARATE: reading files and converting between coordinate
-% systems are different tasks, and merging them produced a 20-item list in which
-% neither was easy to scan. Statistical conversions do sit beside the
-% cluster-level correction they feed, since fmri_p2t is what fmri_csthreshold
-% consumes. The old "Masking and thresholding" group did not hold together:
-% its four members belonged in four different places - fmri_maskdata applies a
-% mask (data handling), fmri_spheremask DEFINES an ROI (atlases), fmri_bin
-% prepares data for display (visualisation) and fmri_dicemirror is a similarity
-% metric (analysis). Dissolving it put each function where a reader would
-% actually look.
+% Effect estimation produces measures such as correlations, similarities and
+% beta maps; statistical inference evaluates those effects using p-values,
+% thresholds and multiple-comparison correction. Temporal preprocessing
+% contains time-domain operations, while spatial resampling is grouped under
+% Space, coordinates and reshaping.
 MODULES = {
  'I/O and NIfTI handling', {'fmri_readnii','fmri_export','fmri_checknifti', ...
     'fmri_tomni152'}
@@ -103,19 +68,15 @@ MODULES = {
     'fmri_showselectslices','fmri_showselectslices_int','fmri_showplanes', ...
     'fmri_showcortex','fmri_show3d','fmri_show3dba','fmri_show3datlas', ...
     'fmri_show3dhalfbrains','fmri_braincake','fmri_brainvideo', ...
-    'fmri_makevizpar','fmri_bin','fmri_juicyslices','fmri_divmap', ...
-    'fmri_makecmap','fmri_distinctcolors','fmri_createlegend'}
+        'fmri_makevizpar','fmri_bin','fmri_juicyslices','fmri_divmap', ...
+    'fmri_makecmap','fmri_distinctcolors','fmri_createlegend','fmri_colorbar'}
 };
 
 %% --- what is actually on disk ---------------------------------------------
 d = dir(fullfile(core, '*.m'));            % does NOT descend into private/
 
-% Test and diagnostic files may sit alongside the functions they test: one that
-% exercises a private helper HAS to, since private functions are visible only
-% from the parent folder. They are not public API, so they are excluded here
-% rather than tripping the unassigned-function error below - and, just as
-% importantly, they are kept out of the function COUNT written into Contents.m,
-% which the manuscript quotes.
+% Exclude test and diagnostic files because they are not part of the public
+% API and should not be listed or counted in Contents.m.
 d = d(~startsWith({d.name}, {'test_', 'diagnose_'}));
 
 on_disk = sort(erase({d.name}, '.m'));
@@ -211,11 +172,8 @@ L{end+1} = sprintf('%% %d public functions. Internal helpers live in core/privat
 L{end+1} = '% deliberately not listed here.';
 L{end+1} = '%';
 
-% ONE column width for the whole file, not one per module. Computed per module,
-% each block was internally aligned but misaligned against its neighbours, so
-% the description column moved at every heading and the eye had to re-find it.
-% The width comes from the longest name anywhere in the table, so adding a
-% longer function re-aligns the whole file rather than ragging one block.
+% Use one column width across all modules, based on the longest function name,
+% so descriptions remain
 W = max(cellfun(@numel, [MODULES{:,2}])) + 2;
 
 for m = 1:size(MODULES, 1)
@@ -232,14 +190,23 @@ end
 L{end+1} = RULE;
 L{end+1} = '% Getting started';
 L{end+1} = RULE;
-% Column width computed from the longest entry rather than hardcoded, so a
-% longer demo name cannot leave the list ragged. Kept separate from W above:
-% these are paths, not function names, and aligning them to W would open a gap.
-demos = {'demo/demo_preprocessing.m',        'preprocessing chain, one participant'
-         'demo/demo_glm.m',                  'two-level GLM, simulated cohort'
-         'demo/demo_visualization.m',        'every display function'
-         'demo/demo_naturalistic.m','full naturalistic-stimulus pipeline'};
-dw = max(cellfun(@numel, demos(:,1)));
+
+
+% Align demo descriptions with the function entries above using the same
+% column width.
+demos = {'demo/demo_preprocessing.m',  'preprocessing chain, one participant'
+         'demo/demo_glm.m',            'two-level GLM, simulated cohort'
+         'demo/demo_visualization.m',  'every display function'
+         'demo/demo_naturalistic.m',   'full naturalistic-stimulus pipeline'};
+
+gone = demos(~cellfun(@(p) isfile(fullfile(toolbox_root, p)), demos(:,1)), 1);
+if ~isempty(gone)
+    error('make_contents:missingDemo', ...
+        ['The Getting started list names files that do not exist:\n  %s\n\n' ...
+         'Update the demos list in this file. Contents.m must not point at a ' ...
+         'file\nthat is not there.'], strjoin(gone, ', '));
+end
+
 for k = 1:size(demos,1)
     L{end+1} = sprintf('%%   %-*s - %s', W, demos{k,1}, demos{k,2}); %#ok<AGROW>
 end

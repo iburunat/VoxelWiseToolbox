@@ -1,65 +1,53 @@
 function generate_rst(mFile, rstFolder, targets, knownNames)
-%GENERATE_RST  Create a Sphinx RST page from a MATLAB help header.
+% GENERATE_RST  Create a Sphinx RST page from a MATLAB help header.
 %
 % Usage:
 %   generate_rst(mFile, rstFolder)
-%   generate_rst(mFile, rstFolder, allNames)
-%   generate_rst(mFile, rstFolder, allNames, linkPrefix)
+%   generate_rst(mFile, rstFolder, targets)
+%   generate_rst(mFile, rstFolder, targets, knownNames)
 %
 % Inputs:
-%   MFILE     - Full path to the .m file.
-%   RSTFOLDER - Folder the .rst file is written to (created if absent).
-%   ALLNAMES  - Optional cellstr of every documented function name. When
-%               given, "See also" entries that appear in it become :doc:
-%               cross-references; entries that do not are left as plain
-%               literal text AND reported, which catches help headers that
-%               point at functions that no longer exist.
-%   LINKPREFIX- Optional path prefix for those cross-references, default ''.
-%               Sphinx resolves a relative :doc: target against the folder
-%               the PAGE lives in, not against the source root. A function
-%               page in modules/ links a sibling as `fmri_x`, but a demo
-%               page in demos/ must link it as `../modules/fmri_x` or the
-%               build fails with "unknown document". Pass '../modules/'
-%               when writing demo pages.
+%   MFILE      - Full path to the .m file.
+%   RSTFOLDER  - Folder the .rst file is written to (created if absent).
+%   TARGETS    - Optional containers.Map from function name to the :doc:
+%                target to use for it. Sphinx resolves a relative target
+%                against the folder the PAGE lives in, so a demo page needs
+%                '../modules/fmri_x' where a function page needs 'fmri_x'.
+%   KNOWNNAMES - Optional cellstr of every .m file in the toolbox. A "See
+%                also" naming one of these but absent from TARGETS is a
+%                private helper or a script: rendered as literal text without
+%                a warning. A name in neither is reported.
 %
 % Notes:
-%   Differences from the first version, each fixing an observed failure:
-%
-%   1. SCRIPTS ARE HANDLED. The old version required line 1 to start with
-%      'function' and silently produced an EMPTY page for anything else, so
-%      every demo script documented as nothing at all. The help block is now
-%      taken as the first run of comment lines, whether or not a function
-%      line precedes it.
-%
-%   2. RST SPECIAL CHARACTERS ARE ESCAPED. Help text contains * and ` and |
-%      (e.g. "N*(N-1)/2" in fmri_rsa, "fSNR * (delta-St / St)" in fmri_cnr).
-%      Unescaped, Sphinx reads these as emphasis or substitution markup and
-%      either mangles the line or emits a warning. Escaping is applied to
-%      prose only, never inside code blocks, where the text must stay literal.
-%
-%   3. CODE INDENTATION SURVIVES. The old version strtrim'ed every line
-%      before writing it into the code block, flattening nested examples.
-%      Detection still uses the trimmed text; the block keeps the original.
-%
-%   4. MORE SECTIONS RECOGNISED. 'Optional', 'Description' and 'Note' were
-%      not detected, so their contents were silently appended to whatever
-%      section came before - usually Inputs.
-%
-%   5. NO '.. currentmodule::'. That is a Python-domain directive and means
-%      nothing in a MATLAB project.
+% Notes:
+%   The converter:
+%     1. Reads help blocks from both functions and scripts.
+%     2. Escapes RST markup in prose while preserving code blocks.
+%     3. Converts all-caps help headings into separate sections.
+%     4. Ends code sections when unindented prose begins.
+%     5. Recognises quoted name-value arguments as input entries.
+%     6. Reflows notes as paragraphs while preserving lists, fields and
+%        indented code.
 %
 % See also: batch_generate
 
 if nargin < 3, targets = containers.Map('KeyType','char','ValueType','char'); end
 if nargin < 4, knownNames = {}; end
 
-% One or more ALLCAPS-ish names, optionally comma separated, then ' - '.
-% The first version's class had no space in it, so a header line like
-% 'TS1, TS2  - Time series vectors' was not recognised as a new item and
-% never got its name bolded.
-NAMEPAT = '[A-Za-z0-9_\[\]()]+(?:\s*,\s*[A-Za-z0-9_\[\]()]+)*';
-if ~isfolder(rstFolder), mkdir(rstFolder); end
+% Match one or more comma-separated names followed by ' - '. Quotes are
+% allowed so name-value arguments are recognised as separate entries.
+NAMEPAT  = '[A-Za-z0-9_.''\[\]()]+(?:\s*,\s*[A-Za-z0-9_.''\[\]()]+)*';
+ITEMPAT  = ['^(' NAMEPAT ')\s+-\s'];
+% Match aligned field lines such as "Dimensions  : 91 x 109 x 91". The space
+% before the colon distinguishes them from ordinary prose such as "Default:".
+FIELDPAT = '^\S[^:]{0,22}\s:\s+\S';
+% Match "Name - description" definitions whose names may be short expressions,
+% such as "atanh(R) * sqrt(DF-3)".
+DEFPAT   = '^\S.{0,40}?\s+-\s+\S';
+LBL      = '<<<LABEL>>>';
+NST      = '<<<NEST>>>';
 
+if ~isfolder(rstFolder), mkdir(rstFolder); end
 [~, funcName] = fileparts(mFile);
 
 fid = fopen(mFile, 'r');
@@ -70,28 +58,49 @@ lines = textscan(fid, '%s', 'Delimiter', '\n', 'Whitespace', '');
 fclose(fid);
 lines = lines{1};
 
-[description, usage, inputs, outputs, examples, notes, references, seealso] = ...
-    deal({}, {}, {}, {}, {}, {}, {}, {});
+S = struct('description', {{}}, 'usage', {{}}, 'inputs', {{}}, ...
+           'outputs', {{}}, 'examples', {{}}, 'notes', {{}}, ...
+           'references', {{}}, 'seealso', {{}}, ...
+           'inputs_tail', {{}}, 'outputs_tail', {{}});
+itemIndent = struct('inputs', -1, 'outputs', -1);  % indent of the first item
+inTail     = struct('inputs', false, 'outputs', false);
+prevBlank  = true;
+cusTitle = {};  cusLines = {};  cusAfter = [];
 
-section    = 'description';
-inDocBlock = false;
-started    = false;
+section      = 'description';
+curCustom    = 0;        % 0 = none, else index into cus*
+seenExamples = false;
+inDocBlock   = false;
+started      = false;
+
+heads = { 'usage:',       'usage'
+          'inputs:',      'inputs'
+          'input:',       'inputs'
+          'optional',     'inputs'
+          'outputs:',     'outputs'
+          'output:',      'outputs'
+          'examples:',    'examples'
+          'example:',     'examples'
+          'description:', 'description'
+          'notes:',       'notes'
+          'note:',        'notes'
+          'references:',  'references'
+          'reference:',   'references'
+          'see also:',    'seealso' };
 
 for i = 1:numel(lines)
     raw  = lines{i};
     line = strtrim(raw);
 
-    % The help block is the FIRST run of comment lines. A leading 'function'
-    % line is skipped; a script with no function line is handled too.
     if ~inDocBlock
         if startsWith(line, 'function')
-            inDocBlock = true;    continue
+            inDocBlock = true;  continue
         elseif startsWith(line, '%')
-            inDocBlock = true;    % script: the block starts right here
+            inDocBlock = true;
         elseif isempty(line)
-            continue              % blank lines before the block
+            continue
         else
-            break                 % code before any help: nothing to document
+            break
         end
     end
 
@@ -100,58 +109,46 @@ for i = 1:numel(lines)
     end
     started = true;
 
-    % Strip the leading '%' and at most one following space, KEEPING any
-    % further indentation so code blocks retain their shape.
-    body    = regexprep(raw, '^\s*%\s?', '', 'once');
+    body    = deblank(regexprep(raw, '^\s*%\s?', '', 'once'));
     content = strtrim(body);
+    indent  = numel(body) - numel(regexprep(body, '^\s*', '', 'once'));
+
     if isempty(content)
-        % A bare '%' is a paragraph break in the help text. Dropping it ran
-        % separate paragraphs together and glued displayed formulae onto the
-        % prose above them. Record it, but never as the first line of a block.
-        switch section
-            case 'description', if ~isempty(description), description{end+1} = ''; end
-            case 'notes',       if ~isempty(notes),       notes{end+1}       = ''; end
-            case 'usage',       if ~isempty(usage),       usage{end+1}       = ''; end
-            case 'examples',    if ~isempty(examples),    examples{end+1}    = ''; end
+        % Paragraph break; never the first line of a block.
+        if curCustom > 0
+            if ~isempty(cusLines{curCustom}), cusLines{curCustom}{end+1} = ''; end
+        elseif any(strcmp(section, {'inputs','outputs'})) && inTail.(section) ...
+                && ~isempty(S.([section '_tail']))
+            S.([section '_tail']){end+1} = '';
+        elseif any(strcmp(section, {'description','notes','usage','examples'})) ...
+                && ~isempty(S.(section))
+            S.(section){end+1} = '';
         end
+        prevBlank = true;
         continue
     end
 
-    % '% ----' rules and '% ====' banners are layout, not content.
     if ~isempty(regexp(content, '^[-=#*_]{3,}$', 'once')), continue, end
+    wasBlank  = prevBlank;
+    prevBlank = false;
 
     low = lower(content);
     hit = false;
-    heads = { 'usage:',       'usage'
-              'inputs:',      'inputs'
-              'input:',       'inputs'
-              'optional',     'inputs'      % 'Optional (name-value pairs):'
-              'outputs:',     'outputs'
-              'output:',      'outputs'
-              'examples:',    'examples'
-              'example:',     'examples'
-              'description:', 'description'
-              'notes:',       'notes'
-              'note:',        'notes'
-              'references:',  'references'
-              'reference:',   'references'
-              'see also:',    'seealso' };
-    for h = 1:size(heads,1)
+    for h = 1:size(heads, 1)
         if startsWith(low, heads{h,1})
-            section = heads{h,2};
+            curCustom = 0;
+            section   = heads{h,2};
+            if strcmp(section, 'examples'), seenExamples = true; end
             rest = strtrim(content(numel(heads{h,1})+1:end));
-            % 'Optional (name-value pairs):' - drop the trailing colon part
             rest = regexprep(rest, '^\([^)]*\):?\s*', '');
             if ~isempty(rest)
-                switch section
-                    case 'usage',       usage{end+1}      = rest; %#ok<*AGROW>
-                    case 'inputs',      inputs{end+1}     = rest;
-                    case 'outputs',     outputs{end+1}    = rest;
-                    case 'examples',    examples{end+1}   = rest;
-                    case 'description', description{end+1}= rest;
-                    case 'notes',       notes{end+1}      = rest;
-                    case 'references',  references{end+1} = rest;
-                    case 'seealso',     seealso{end+1}    = rest;
+                if any(strcmp(section, {'inputs','outputs'})) ...
+                        && isempty(regexp(rest, '\s-\s', 'once'))
+                    % "Optional name-value pairs:" is a group label, not an
+                    % entry (rule 5).
+                    S.(section){end+1} = [LBL regexprep(rest, ':$', '')];
+                else
+                    S.(section){end+1} = rest; %#ok<*AGROW>
                 end
             end
             hit = true; break
@@ -159,162 +156,467 @@ for i = 1:numel(lines)
     end
     if hit, continue, end
 
-    switch section
-        case 'description'
-            description{end+1} = content;
+    % Look ahead one line, for the heading test.
+    nxtBody = '';
+    if i < numel(lines)
+        nxtRaw = lines{i+1};
+        if startsWith(strtrim(nxtRaw), '%')
+            nxtBody = deblank(regexprep(nxtRaw, '^\s*%\s?', '', 'once'));
+        end
+    end
 
-        case {'usage','examples'}
-            % Keep the raw (indented) body for code blocks.
-            if strcmp(section,'usage'), usage{end+1} = body;
-            else,                       examples{end+1} = body; end
+    if is_custom_heading(content, indent, nxtBody)
+        cusTitle{end+1} = content;
+        cusLines{end+1} = {};
+        cusAfter(end+1) = seenExamples;
+        curCustom = numel(cusTitle);
+        continue
+    end
+
+    % Inside a code section an unindented line is no longer code (rule 4).
+    if curCustom == 0 && any(strcmp(section, {'usage','examples'})) && indent == 0
+        section = 'notes';
+        S.notes{end+1} = content;
+        continue
+    end
+
+    if curCustom > 0
+        cusLines{curCustom}{end+1} = body;
+        continue
+    end
+
+    switch section
+        case {'description','usage','examples','notes'}
+            S.(section){end+1} = body;
 
         case {'inputs','outputs'}
-            isNewItem = ~isempty(regexp(content, ['^' NAMEPAT '\s+-\s'], 'once'));
-            lst = inputs; if strcmp(section,'outputs'), lst = outputs; end
-            if isNewItem || isempty(lst)
+            lst = S.(section);
+            if inTail.(section)
+                S.([section '_tail']){end+1} = body;
+            elseif ~isempty(regexp(content, ITEMPAT, 'once'))
+                if itemIndent.(section) < 0, itemIndent.(section) = indent; end
+                % An item indented beyond the first input or output entry is treated as a
+                % sub-option rather than a separate top-level item.
+                if indent > itemIndent.(section) && ~isempty(lst)
+                    lst{end+1} = [NST content];
+                else
+                    lst{end+1} = content;
+                end
+            elseif wasBlank && endsWith(content, ':') ...
+                    && isempty(regexp(content, '\s-\s', 'once'))
+                % Treat a line ending in a colon as a group label only when followed by
+                % actual items; otherwise, treat it as the start of a prose paragraph.
+               if ~isempty(regexp(next_content(lines, i), ITEMPAT, 'once'))
+                    lst{end+1} = [LBL regexprep(content, ':$', '')];
+                else
+                    inTail.(section) = true;
+                    S.([section '_tail']){end+1} = body;
+                end
+            elseif wasBlank && ~isempty(lst) && indent <= max(itemIndent.(section), 0)
+                inTail.(section) = true;
+                S.([section '_tail']){end+1} = body;
+            elseif isempty(lst)
                 lst{end+1} = content;
             else
                 lst{end} = [lst{end} ' ' content];
             end
-            if strcmp(section,'outputs'), outputs = lst; else, inputs = lst; end
-
-        case 'notes'
-            notes{end+1} = content;
+            S.(section) = lst;
 
         case 'references'
-            % A new citation starts with "Surname, " or "Surname & "
-            if isempty(references)
-                references{1} = content;
+            if isempty(S.references)
+                S.references{1} = content;
             elseif ~isempty(regexp(content, '^[A-Z][A-Za-z''\-]+[,&]', 'once'))
-                references{end+1} = content;
+                S.references{end+1} = content;
             else
-                references{end} = [references{end} ' ' content];
+                S.references{end} = [S.references{end} ' ' content];
             end
 
         case 'seealso'
-            % "See also" is the last section by convention, and the lines
-            % after it are a comma-separated list of names. fmri_fisherz2p
-            % ends its header with a commented-out line of code and NO blank
-            % line between, so '%p = 2 * (1 - normcdf(abs(z)));' was being
-            % collected as a "See also" entry. Anything that is not a plain
-            % name list ends the header.
+            % Anything that is not a plain name list ends the header:
+            % fmri_fisherz2p closes with a commented-out line of code and no
+            % blank line before it.
             if isempty(regexp(content, '^[A-Za-z0-9_., ]+$', 'once'))
                 break
             end
-            seealso{end+1} = content;
+            S.seealso{end+1} = content;
     end
 end
 
-%% ---- write ---------------------------------------------------------------
+%% ---- render --------------------------------------------------------------
+out = {};
+out{end+1} = funcName;
+out{end+1} = repmat('=', 1, max(numel(funcName), 3));
+out{end+1} = '';
+
+desc = S.description;
+if ~isempty(desc)
+    lead = regexprep(strtrim(desc{1}), ['^' upper(funcName) '\s+'], '', 'ignorecase');
+    out{end+1} = rst_escape(lead);
+    out{end+1} = '';
+    desc(1) = [];
+end
+
+out = write_prose(out, 'Description', desc, FIELDPAT);
+out = write_code (out, 'Usage',       S.usage);
+out = write_defs (out, 'Inputs',      S.inputs,  NAMEPAT, LBL, NST);
+out = write_prose(out, '',            S.inputs_tail,  FIELDPAT);
+out = write_defs (out, 'Outputs',     S.outputs, NAMEPAT, LBL, NST);
+out = write_prose(out, '',            S.outputs_tail, FIELDPAT);
+for k = 1:numel(cusTitle)
+    if ~cusAfter(k)
+        out = write_prose(out, cusTitle{k}, cusLines{k}, FIELDPAT);
+    end
+end
+out = write_code(out, 'Examples', S.examples);
+for k = 1:numel(cusTitle)
+    if cusAfter(k)
+        out = write_prose(out, cusTitle{k}, cusLines{k}, FIELDPAT);
+    end
+end
+out = write_prose(out, 'Notes', S.notes, FIELDPAT);
+
+if ~isempty(S.references)
+    out{end+1} = 'References';
+    out{end+1} = '----------';
+    out{end+1} = '';
+    for k = 1:numel(S.references)
+        out{end+1} = ['- ' rst_escape(S.references{k})];
+    end
+    out{end+1} = '';
+end
+
+if ~isempty(S.seealso)
+    parts = strtrim(strsplit(strjoin(S.seealso, ', '), ','));
+    parts = parts(~cellfun(@isempty, parts));
+    if ~isempty(parts)
+        out{end+1} = 'See Also';
+        out{end+1} = '--------';
+        out{end+1} = '';
+        items = cell(1, numel(parts));
+        for k = 1:numel(parts)
+            nm = regexprep(parts{k}, '\.m$', '');
+            if isKey(targets, nm)
+                items{k} = sprintf(':doc:`%s <%s>`', nm, targets(nm));
+            else
+                items{k} = sprintf('``%s``', nm);
+                if ~any(strcmp(nm, knownNames))
+                    warning('generate_rst:danglingSeeAlso', ...
+                        ['%s: "See also" names %s, which exists nowhere in ' ...
+                         'the toolbox. Fix or remove the reference.'], funcName, nm);
+                end
+            end
+        end
+        out{end+1} = strjoin(items, ' · ');
+        out{end+1} = '';
+    end
+end
+
 rstFile = fullfile(rstFolder, [funcName '.rst']);
 fid = fopen(rstFile, 'w');
 if fid == -1
     error('generate_rst:cannotWrite', 'Could not write RST file: %s', rstFile);
 end
-
-% The title rule must be at least as long as the title, or Sphinx warns.
-fprintf(fid, '%s\n', funcName);
-fprintf(fid, '%s\n\n', repmat('=', 1, max(numel(funcName), 3)));
-
-% The first help line is "FMRI_X  One-line summary." Lift it out as the lead
-% paragraph and drop the repeated function name from it.
-if ~isempty(description)
-    lead = regexprep(description{1}, ['^' upper(funcName) '\s+'], '', 'ignorecase');
-    fprintf(fid, '%s\n\n', rst_escape(lead));
-    description(1) = [];
+for k = 1:numel(out)
+    fprintf(fid, '%s\n', out{k});
 end
-
-write_prose(fid, 'Description', description);
-write_code (fid, 'Usage',       usage);
-write_defs (fid, 'Inputs',      inputs);
-write_defs (fid, 'Outputs',     outputs);
-write_code (fid, 'Examples',    examples);
-write_prose(fid, 'Notes',       notes, true);
-write_prose(fid, 'References',  references, true);
-
-% See also -> :doc: links, with unresolved names reported rather than linked.
-if ~isempty(seealso)
-    parts = strtrim(strsplit(strjoin(seealso, ', '), ','));
-    parts = parts(~cellfun(@isempty, parts));
-    if ~isempty(parts)
-        fprintf(fid, 'See Also\n--------\n\n');
-        out = cell(1, numel(parts));
-        for i = 1:numel(parts)
-            nm = regexprep(parts{i}, '\.m$', '');
-            if isKey(targets, nm)
-                out{i} = sprintf(':doc:`%s <%s>`', nm, targets(nm));
-            elseif any(strcmp(nm, knownNames))
-                % Exists somewhere in the toolbox but has no page of its own:
-                % a private helper, a setup or utility script, a test. A
-                % perfectly good thing to mention, just not linkable. Render
-                % it as literal text and say nothing - warning here buried the
-                % one reference that was actually broken among four that were
-                % not.
-                out{i} = sprintf('``%s``', nm);
-            else
-                out{i} = sprintf('``%s``', nm);
-                warning('generate_rst:danglingSeeAlso', ...
-                        ['%s: "See also" names %s, which exists nowhere in ' ...
-                         'the toolbox. Fix or remove the reference.'], ...
-                        funcName, nm);
-            end
-        end
-        fprintf(fid, '%s\n\n', strjoin(out, ' · '));
-    end
-end
-
 fclose(fid);
 end
 
 %% ---- helpers -------------------------------------------------------------
+function tf = is_custom_heading(content, indent, nextBody)
+% An ALL-CAPS run-in heading the help text invents for itself.
+%
+% Identify headings conservatively: they must be unindented, short, begin
+% with an all-caps word, lack trailing punctuation, and be followed by a
+% blank or indented line. This avoids treating acronym-led prose as a heading.
+tf = false;
+if indent ~= 0 || isempty(content) || numel(content) > 80, return, end
+if any(content(end) == '.,;:'), return, end
+first = regexp(content, '^\S+', 'match', 'once');
+if isempty(regexp(first, '^[A-Z][A-Z0-9_]+$', 'once')), return, end
+nxt = strtrim(nextBody);
+tf = isempty(nxt) || (numel(nextBody) - numel(regexprep(nextBody,'^\s*','','once'))) > 0;
+end
+
+function c = next_content(lines, i)
+% The next non-blank comment line after i, stripped. '' if there is none.
+c = '';
+for k = i+1:numel(lines)
+    s = strtrim(lines{k});
+    if ~startsWith(s, '%'), return, end
+    t = strtrim(regexprep(lines{k}, '^\s*%\s?', '', 'once'));
+    if ~isempty(t), c = t; return, end
+end
+end
+
 function s = rst_escape(s)
-% Escape the inline-markup characters that occur in these help headers.
-% strrep is used rather than regexprep so nothing in the text is treated as
-% a pattern or as a replacement escape.
+% Escape RST inline-markup characters in prose. Use STRREP where possible so
+% the text is handled literally rather than interpreted as a regular expression.
 s = strrep(s, '\', '\\');
 s = strrep(s, '*', '\*');
 s = strrep(s, '`', '\`');
 s = strrep(s, '|', '\|');
-% An underscore ENDS a reference in RST whenever it is not followed by an
-% alphanumeric character - not only at end of line. 'rp_*.txt' in
-% fmri_correctmovement's notes therefore read as a reference to a target
-% named "rp" and failed the build with "Unknown target name". Internal
-% underscores (fmri_vol2vect) are still left alone.
+% An underscore ends a reference in RST whenever it is not followed by an
+% alphanumeric, not only at end of line. Internal ones (fmri_vol2vect) are
+% left alone.
 s = regexprep(s, '_(?![A-Za-z0-9])', '\\_');
 end
 
-function write_prose(fid, head, items, asList)
-if nargin < 4, asList = false; end
-if isempty(items), return, end
-fprintf(fid, '%s\n%s\n\n', head, repmat('-', 1, numel(head)));
-for i = 1:numel(items)
-    if asList
-        fprintf(fid, '- %s\n', rst_escape(items{i}));
+function items = trim_blanks(items)
+while ~isempty(items) && isempty(strtrim(items{1})), items(1)   = []; end
+while ~isempty(items) && isempty(strtrim(items{end})), items(end) = []; end
+end
+
+function n = indent_of(s)
+n = numel(s) - numel(regexprep(s, '^\s*', '', 'once'));
+end
+
+function tf = looks_like_code(s)
+tf = ~isempty(regexp(s, '[=;{}]|\w\(', 'once')) || ...
+     ~isempty(regexp(s, '^\s*\[', 'once'));
+end
+
+function [groups, isCode] = classify_run(run)
+% Split an indented run into groups by indent level, each flagged code or not.
+%
+% Classify indented content by indentation level so prose and code remain
+% separate without splitting multi-line diagrams. A short unpunctuated line
+% immediately before code is treated as the diagram heading.
+g = {}; gi = [];
+for k = 1:numel(run)
+    ind = indent_of(run{k});
+    if ~isempty(g) && gi(end) == ind
+        g{end}{end+1} = run{k};
     else
-        fprintf(fid, '%s\n', rst_escape(items{i}));
+        g{end+1} = run(k);  gi(end+1) = ind;
     end
 end
-fprintf(fid, '\n');
+code = false(1, numel(g));
+for k = 1:numel(g)
+    for j = 1:numel(g{k})
+        if looks_like_code(strtrim(g{k}{j})), code(k) = true; break, end
+    end
+end
+groups = {}; isCode = [];
+k = 1;
+while k <= numel(g)
+    merge = false;
+    if ~code(k) && numel(g{k}) == 1 && k < numel(g) && code(k+1)
+        t = strtrim(g{k}{1});
+        if ~any(t(end) == '.:;'), merge = true; end
+    end
+    if merge
+        groups{end+1} = [g{k} g{k+1}];  isCode(end+1) = true;  k = k + 2;
+    else
+        groups{end+1} = g{k};  isCode(end+1) = code(k);  k = k + 1;
+    end
+end
 end
 
-function write_code(fid, head, items)
-if isempty(items), return, end
-fprintf(fid, '%s\n%s\n\n', head, repmat('-', 1, numel(head)));
-fprintf(fid, '.. code-block:: matlab\n\n');
-for i = 1:numel(items)
-    fprintf(fid, '   %s\n', items{i});   % literal: no escaping
+function out = emit_block(out, lines, isCode)
+if isCode
+    out{end+1} = '.. code-block:: matlab';
+    out{end+1} = '';
+    strip = inf;
+    for k = 1:numel(lines)
+        if ~isempty(strtrim(lines{k})), strip = min(strip, indent_of(lines{k})); end
+    end
+    if ~isfinite(strip), strip = 0; end
+    for k = 1:numel(lines)
+        if isempty(strtrim(lines{k}))
+            out{end+1} = '';
+        else
+            out{end+1} = deblank(['   ' lines{k}(strip+1:end)]);
+        end
+    end
+else
+    txt = cell(1, numel(lines));
+    for k = 1:numel(lines), txt{k} = strtrim(lines{k}); end
+    out{end+1} = rst_escape(strjoin(txt, ' '));
 end
-fprintf(fid, '\n');
+out{end+1} = '';
 end
 
-function write_defs(fid, head, items)
+function out = write_prose(out, head, items, FIELDPAT)
+% Flowing paragraphs. Runs of indented code and of 'Name : value' field lines
+% keep their own shape instead of being folded into the paragraph, and
+% nothing becomes a bullet unless the source wrote one.
+items = trim_blanks(items);
 if isempty(items), return, end
-NAMEPAT = '[A-Za-z0-9_\[\]()]+(?:\s*,\s*[A-Za-z0-9_\[\]()]+)*';
-fprintf(fid, '%s\n%s\n\n', head, repmat('-', 1, numel(head)));
-for i = 1:numel(items)
-    item = rst_escape(items{i});
+if ~isempty(head)
+    out{end+1} = head;
+    out{end+1} = repmat('-', 1, max(numel(head), 3));
+    out{end+1} = '';
+end
+
+base = inf;
+for k = 1:numel(items)
+    if ~isempty(strtrim(items{k})), base = min(base, indent_of(items{k})); end
+end
+if ~isfinite(base), base = 0; end
+
+para = {}; run = {}; field = {}; bul = {}; bulIndent = 0;
+for k = 1:numel(items)
+    it = items{k};
+    if isempty(strtrim(it))
+        [out, para, run, field, bul] = flush_prose(out, para, run, field, bul);
+        continue
+    end
+    ind = indent_of(it);
+    txt = strtrim(it);
+
+    % Detect source bullets before applying indentation rules; otherwise, an
+    % indented list containing code-like text may be misclassified as code.
+    tok = regexp(txt, '^([-*+]|\(?\d{1,2}[.)])\s+(.*)$', 'tokens', 'once');
+    if ~isempty(tok)
+        if ~isempty(para) || ~isempty(field) || ~isempty(run)
+            [out, para, run, field, bul] = flush_prose(out, para, run, field, bul);
+        end
+        bul{end+1} = tok;
+        bulIndent  = ind;
+        continue
+    end
+    if ~isempty(bul) && ind > bulIndent
+        bul{end}{end+1} = txt;        % wrapped continuation of this item
+        continue
+    end
+    if ~isempty(bul)
+        [out, para, run, field, bul] = flush_prose(out, para, run, field, bul);
+    end
+
+    if ind > base
+        if ~isempty(para) || ~isempty(field)
+            [out, para, run, field, bul] = flush_prose(out, para, run, field, bul);
+        end
+        run{end+1} = it;
+    elseif ~isempty(regexp(txt, FIELDPAT, 'once'))
+        if ~isempty(para) || ~isempty(run)
+            [out, para, run, field, bul] = flush_prose(out, para, run, field, bul);
+        end
+        field{end+1} = it;
+    else
+        if ~isempty(run) || ~isempty(field)
+            [out, para, run, field, bul] = flush_prose(out, para, run, field, bul);
+        end
+        para{end+1} = it;
+    end
+end
+[out, ~, ~, ~, ~] = flush_prose(out, para, run, field, bul);
+while ~isempty(out) && isempty(out{end}), out(end) = []; end
+out{end+1} = '';
+end
+
+function [out, para, run, field, bul] = flush_prose(out, para, run, field, bul)
+DEFPAT = '^\S.{0,40}?\s+-\s+\S';
+if ~isempty(para)
+    txt = cell(1, numel(para));
+    for k = 1:numel(para), txt{k} = strtrim(para{k}); end
+    joined = strjoin(txt, ' ');
+    if numel(para) == 1 && endsWith(joined, ':') && numel(joined) <= 60
+        % A short line ending in a colon introduces what follows; setting it
+        % bold separates fmri_makevizpar's per-viewer blocks from their lists.
+        out{end+1} = ['**' rst_escape(joined) '**'];
+    else
+        out{end+1} = rst_escape(joined);
+    end
+    out{end+1} = '';
+end
+if ~isempty(bul)
+    for k = 1:numel(bul)
+        mk = bul{k}{1};
+        if any(strcmp(mk, {'-','*','+'})), mk = '-'; end
+        out{end+1} = [mk ' ' rst_escape(strjoin(bul{k}(2:end), ' '))];
+    end
+    out{end+1} = '';
+end
+if ~isempty(field)
+    for k = 1:numel(field)
+        out{end+1} = ['| ' rst_escape(strtrim(field{k}))];
+    end
+    out{end+1} = '';
+end
+if ~isempty(run)
+    rbase = inf;
+    for k = 1:numel(run)
+        if ~isempty(strtrim(run{k})), rbase = min(rbase, indent_of(run{k})); end
+    end
+    if ~isfinite(rbase), rbase = 0; end
+    if ~isempty(regexp(strtrim(run{1}), DEFPAT, 'once'))
+        % Alignment decides where each entry starts; deeper lines continue it.
+        defs = {};
+        for k = 1:numel(run)
+            if indent_of(run{k}) == rbase && ~isempty(regexp(run{k}, '\s-\s', 'once'))
+                defs{end+1} = {strtrim(run{k})};
+            elseif ~isempty(defs)
+                defs{end}{end+1} = strtrim(run{k});
+            end
+        end
+        for k = 1:numel(defs)
+            s = rst_escape(strjoin(defs{k}, ' '));
+            s = regexprep(s, '^(\S.{0,40}?)\s+-\s+', '**$1** -- ', 'once');
+            out{end+1} = ['- ' s];
+        end
+        out{end+1} = '';
+    else
+        [groups, isCode] = classify_run(run);
+        for k = 1:numel(groups)
+            out = emit_block(out, groups{k}, isCode(k));
+        end
+    end
+end
+para = {}; run = {}; field = {}; bul = {};
+end
+
+function out = write_code(out, head, items)
+items = trim_blanks(items);
+if isempty(items), return, end
+out{end+1} = head;
+out{end+1} = repmat('-', 1, numel(head));
+out{end+1} = '';
+out{end+1} = '.. code-block:: matlab';
+out{end+1} = '';
+strip = inf;
+for k = 1:numel(items)
+    if ~isempty(strtrim(items{k})), strip = min(strip, indent_of(items{k})); end
+end
+if ~isfinite(strip), strip = 0; end
+for k = 1:numel(items)
+    if isempty(strtrim(items{k}))
+        out{end+1} = '';
+    else
+        out{end+1} = deblank(['   ' items{k}(strip+1:end)]);
+    end
+end
+out{end+1} = '';
+end
+
+function out = write_defs(out, head, items, NAMEPAT, LBL, NST)
+if isempty(items), return, end
+out{end+1} = head;
+out{end+1} = repmat('-', 1, numel(head));
+out{end+1} = '';
+for k = 1:numel(items)
+    if startsWith(items{k}, NST)
+        s = rst_escape(items{k}(numel(NST)+1:end));
+        s = regexprep(s, ['^(' NAMEPAT ')\s+-\s+'], '**$1** -- ');
+        if ~isempty(out) && ~startsWith(out{end}, '  - ')
+            out{end+1} = '';
+        end
+        out{end+1} = ['  - ' s];
+        continue
+    end
+    if ~isempty(out) && startsWith(out{end}, '  - ')
+        out{end+1} = '';
+    end
+    if startsWith(items{k}, LBL)
+        out{end+1} = '';
+        out{end+1} = ['*' rst_escape(items{k}(numel(LBL)+1:end)) '*'];
+        out{end+1} = '';
+        continue
+    end
+    item = rst_escape(items{k});
     item = regexprep(item, ['^(' NAMEPAT ')\s+-\s+'], '**$1** -- ');
-    fprintf(fid, '- %s\n', item);
+    out{end+1} = ['- ' item];
 end
-fprintf(fid, '\n');
+out{end+1} = '';
 end
