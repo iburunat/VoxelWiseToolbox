@@ -56,13 +56,13 @@ different geometry, and in particular is *not* a partial-brain slab:
 Because the avmovie acquisition covers roughly twice the z-extent, there is no
 reason to expect the large empty regions that a partial-brain slab would leave
 in the 228,453-voxel vector. Any substantial missing coverage in the avmovie
-result should therefore be investigated rather than attributed to the
+result should therefore be investigated and not attributed to the
 acquisition.
 
 This is also why `fmri_readnii` fails on these files with *"Non-orthogonal
 rotation or shearing found inside the affine matrix"*. That is not a bug:
 `fmri_readnii` uses `load_nii`, which refuses to apply a non-orthogonal affine
-rather than silently distorting the data. (`fmri_tomni152` uses
+that would otherwise distort the data. (`fmri_tomni152` uses
 `load_untouch_nii` instead, reading the raw array and handling the affine
 itself — but it performs affine resampling only and explicitly does **not**
 do native→MNI spatial normalisation, so it cannot rescue raw native-space data
@@ -98,6 +98,11 @@ mni/sub-XX_task-avmovie_run-N_MNI.nii.gz   (91 x 109 x 91, 2 mm = the toolbox gr
 toolbox analysis
 ```
 
+With the default 2 mm reference this last step is geometrically an identity.
+FSL’s MNI152_T1_2mm grid is the toolbox grid, and serves to write a canonical 
+single-sform header and to assert the coverage. It does real resampling whenever 
+SF_REF or the 1 mm fallback changed the output grid.
+
 Confirmed present for `sub-01`:
 
 ```
@@ -108,14 +113,18 @@ templates/grpbold3Tp2/in_mni/brain_12dof.nii.gz
 templates/grpbold3Tp2/from_mni/MNI152_T1_1mm.nii.gz
 ```
 
+
 **The group template is not canonical MNI152.** `grpbold3Tp2` is a
 study-specific template built from these participants; the dataset author
 describes it as being "in MNI space", meaning MNI-aligned. Because the toolbox's
 atlases (AAL, Harvard-Oxford, Juelich, …) are defined in canonical MNI152,
 stopping at the group template would leave a systematic offset in every region
 label. The final `tmpl2mni_12dof` hop is therefore **required, not optional**.
-
-Helpfully, the `12dof` naming shows the group↔MNI152 relationship is a pure
+Published guidance does not make this clear: the one widely-cited
+[Neurostars answer](https://neurostars.org/t/transforming-study-forrest-fmri-data-to-mni-space/3041)
+gives a single `applywarp` with the group template as the reference image and
+never mentions `tmpl2mni_12dof`, so following it leaves the data in template
+space. Helpfully, the `12dof` naming shows the group↔MNI152 relationship is a pure
 affine, so that last hop is a single cheap FLIRT operation with no warp
 interpolation.
 
@@ -146,7 +155,7 @@ series used as temporal nuisance regressors, not a spatial object.
 ### Running it
 
 `sf_to_mni152.sh` performs both steps in **one** `applywarp` call using
-`--postmat`, so this stage resamples the data once rather than twice:
+`--postmat`, so this stage resamples the data once instead of twice:
 
 ```bash
 ./sf_to_mni152.sh <transforms_dir> <aligned_bold> <subject> <output>
@@ -158,7 +167,7 @@ then affine (tmpl→MNI), so `--warp=subj2tmpl_warp --postmat=tmpl2mni_12dof` is
 the correct assignment, and `--premat` is correctly omitted because the input is
 already in `bold3Tp2` space.
 
-The reference image defaults to FSL's 2 mm MNI152 standard rather than the
+The reference image defaults to FSL's 2 mm MNI152 standard instead of the
 bundled 1 mm template: the toolbox resamples to 2 mm regardless, and 1 mm output
 would be roughly eight times larger per volume (7.2 M vs 903 K voxels). Override
 with `SF_REF=/path/to/ref.nii.gz` if 1 mm is wanted.

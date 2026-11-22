@@ -12,23 +12,20 @@ function plot_rsn_bars(r_group, atlas_path)
 %
 % Inputs:
 %   R_GROUP    - Group correlation map, 228453 x 1, as produced by
-%                demo_studyforrest_group.
+%                demo_studyforrest.
 %   ATLAS_PATH - Optional path to restingstatenets.mat. Defaults to the copy
 %                bundled in atlases/.
 %
-% WHAT IS PLOTTED, EXACTLY
-%   The same quantity rsn_compare_demo prints under "Networks INCREASING with
-%   the regressor": the correlation between each network template and the
-%   POSITIVE HALF of the group map, that is r_group with negative values set to
-%   zero. Half-map correlation is used rather than the correlation with the full
-%   signed map because a network that overlaps both positive and negative
-%   territory would otherwise cancel to near zero and appear unrelated.
+% WHAT IS PLOTTED
+%   The bars show the correlation between each network template and the
+%   positive part of the group map (negative values set to zero), matching
+%   rsn_compare_demo. Zero and non-finite voxels are excluded, so the values
+%   match its output exactly.
 %
-%   Voxels that are zero or non-finite in r_group are excluded, matching
-%   rsn_compare_demo's `valid` mask, so the numbers here reproduce its output
-%   rather than approximating it.
-%
-% See also: rsn_compare_demo, fmri_corrmat, demo_studyforrest_group
+% See also: rsn_compare_demo, fmri_corrmat, demo_studyforrest
+
+FS = 8;            % point size on the printed page: this panel is rendered
+                   % at its final 11.6 cm width, so the number is literal
 
 if nargin < 2 || isempty(atlas_path)
     atlas_path = fullfile(fileparts(which('fmritoolbox_setup')), ...
@@ -63,9 +60,6 @@ for k = 1:nNet
 end
 
 %% --- tidy the names --------------------------------------------------------
-% Templates are stored under their filenames ("rauditory.nii"); strip the
-% leading 'r' from the resampling step and the extension, then use readable
-% labels for the figure.
 lab = cell(nNet, 1);
 for k = 1:nNet
     s = char(netname{k});
@@ -77,7 +71,7 @@ end
 % Visual network numbering follows Smith et al. (2009): vis_one is MEDIAL,
 % vis_two is OCCIPITAL POLE, vis_three is LATERAL. The bundled templates are the
 % same maps as the published set, in a different file order, so the numbering
-% must be read from the names rather than from the position in the file.
+% must be read from the names.
 pretty = containers.Map( ...
   {'auditory','vis one','vis two','vis three','DMN','sensorimotor', ...
    'exec contr','frontoparietal one','frontoparietal two','cerebellum'}, ...
@@ -88,8 +82,11 @@ for k = 1:nNet
     if isKey(pretty, lab{k}), lab{k} = pretty(lab{k}); end
 end
 
-[r_sorted, ord] = sort(r, 'descend');
+% Rank by |r|, rounded to the two decimals
+[~, ord] = sortrows([-round(abs(r), 2), -r]);
+r_sorted   = r(ord);
 lab_sorted = lab(ord);
+
 
 %% --- plot ------------------------------------------------------------------
 figure('Name', 'Resting-state network correspondence', ...
@@ -105,19 +102,26 @@ b.CData = cols;
 b.EdgeColor = 'none';
 
 set(gca, 'YTick', 1:nNet, 'YTickLabel', flipud(lab_sorted), ...
-         'FontSize', 10, 'Box', 'off', 'TickDir', 'out', 'YColor', [0.3 0.3 0.3]);
-xlabel('Spatial correlation with the group map', 'FontSize', 10);
+         'YLim', [0.4, nNet + 0.6], 'FontSize', FS, 'Box', 'off', ...
+         'TickDir', 'out', 'YColor', [0.3 0.3 0.3]);
+xlabel('Spatial correlation with the group map', 'FontSize', FS);
+
+% set(gca, 'YTick', 1:nNet, 'YTickLabel', flipud(lab_sorted), ...
+%          'FontSize', 10, 'Box', 'off', 'TickDir', 'out', 'YColor', [0.3 0.3 0.3]);
+% xlabel('Spatial correlation with the group map', 'FontSize', 10);
+
 xline(0, 'Color', [0.6 0.6 0.6]);
 %xlim([min(0, min(r)) - 0.03, max(r) + 0.06]);
-xlim([-0.20 0.40])
+xlim([-0.24 0.40]);
+set(gca, 'XTick', -0.2:0.1:0.4);
 % Value labels, placed outside each bar so they never overlap it.
 for k = 1:nNet
     v = r_sorted(nNet - k + 1);
     if v >= 0
-        text(v + 0.008, k, sprintf('%.2f', v), 'FontSize', 9, ...
+        text(v + 0.008, k, sprintf('%.2f', v), 'FontSize', FS - 1, ...
              'VerticalAlignment', 'middle', 'Color', [0.25 0.25 0.25]);
     else
-        text(v - 0.008, k, sprintf('%.2f', v), 'FontSize', 9, 'HorizontalAlignment', 'right', ...
+        text(v - 0.008, k, sprintf('%.2f', v), 'FontSize', FS - 1, 'HorizontalAlignment', 'right', ...
              'VerticalAlignment', 'middle', 'Color', [0.25 0.25 0.25]);
     end
 end

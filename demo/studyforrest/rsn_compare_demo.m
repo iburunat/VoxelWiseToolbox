@@ -23,60 +23,19 @@ function rsn_compare_demo(r_map, n_surr, atlas_path)
 % resembles that of a canonical network, which is exactly the comparison Smith
 % et al. used to match task co-activation patterns to resting-state networks.
 %
-% EVERY CORRELATION IS COMPUTED WITH fmri_corrmat
+% CORRELATIONS AND RANKING
 %
-% fmri_corrmat correlates every column of its first argument with every column
-% of its second, so one call replaces a loop over the ten networks and returns
-% the whole row at once. The toolbox function is used rather than corr() from
-% the Statistics and Machine Learning Toolbox: the arithmetic is identical
-% (centre each column, normalise to unit norm, take the inner product), and the
-% point of these demos is that a complete published analysis runs on base
-% MATLAB plus this toolbox and nothing else.
-%
-% POSITIVE AND NEGATIVE ARE RANKED SEPARATELY
-%
-% A map with effects of both signs cannot be compared to a network as a whole:
-% the two directions partly cancel. The positive (increasing) and negative
-% (decreasing) halves are therefore correlated with the networks separately, so
-% the two questions -- which networks increase, which decrease with the
-% regressor -- stay distinct.
-%
-% RANKING METRIC: |r|, WITH THE SIGNED r SHOWN
-%
-% Each half-map is correlated with the SIGNED network component, and the ranking
-% uses the ABSOLUTE correlation. The absolute value is taken on the CORRELATION,
-% never on the network map: an ICA component is a signed spatial pattern whose
-% relative polarity (which regions are the positive vs negative lobe) is part of
-% its structure, so abs(net) would create a different map. What is arbitrary is
-% only the component's GLOBAL sign -- a component and its negation are the same
-% decomposition -- and abs(r) removes exactly that global flip while leaving the
-% component intact. The signed r is printed alongside so the reader can see which
-% lobe the response aligned with.
-%
-% Note that ranking by |r| and plotting by signed r give different orders: a
-% strongly negative correlation ranks high here but sits at the bottom of a
-% signed bar chart. Any figure or text describing this output must say which
-% ordering it is using.
+% Positive and negative effects are analysed separately. Each half of the
+% map is correlated with the ten canonical network templates and ranked by
+% the absolute correlation, while the signed correlation is reported so the
+% direction of the relationship remains visible.
 %
 % SIGNIFICANCE
 %
-% A parametric p-value is invalid here: brain maps are spatially smooth, so
-% their correlation has a far wider null than the independent-samples formula
-% assumes (two independent smoothed maps of this size reach |r| = 0.08 about 5%
-% of the time, which a parametric test would call p < 1e-100). With N_SURR > 0
-% the function instead builds a null that preserves spatial smoothness: it
-% phase-randomises R_MAP in 3-D (fmri_scramblephases, which keeps the spatial
-% power spectrum and hence the autocorrelation) and correlates each surrogate
-% with the FIXED network. The RSN is never randomised -- the null must break the
-% specific correspondence while preserving each map's smoothness, so only the
-% analysed map is surrogated. The empirical p is the fraction of surrogate |r|
-% at least as large as observed, and across the ten networks the p-values are
-% FDR-corrected (Benjamini-Hochberg).
-%
-% This phase-randomisation null is an approximation: it preserves second-order
-% spatial structure but assumes an approximately stationary, Gaussian field.
-% Variogram-matching methods (e.g. BrainSMASH) model the autocorrelation more
-% directly and are preferable for a publication result.
+% Spatial smoothness makes standard parametric p-values unreliable for map
+% correlations. If N_SURR > 0, significance is instead estimated from
+% phase-randomised spatial surrogates and corrected for multiple comparisons
+% using FDR. This provides an approximate autocorrelation-aware test.
 %
 % See also: fmri_corrmat, fmri_scramblephases, fmri_vect2vol, fmri_vol2vect
 
