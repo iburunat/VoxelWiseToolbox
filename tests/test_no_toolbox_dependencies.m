@@ -1,15 +1,14 @@
 function tests = test_no_toolbox_dependencies
 % TEST_NO_TOOLBOX_DEPENDENCIES  Every function must run on base MATLAB alone.
 %
-% The toolbox claims to require MATLAB and nothing else - no MathWorks toolbox
-% (paper Section 4 and Table 4, and the title). This checks the claim
-% mechanically with matlab.codetools.requiredFilesAndProducts rather than
-% asserting it: eight functions were still calling into Statistics months after
-% the removal pass was believed complete.
+% Verifies that all toolbox files require only base MATLAB, using
+% matlab.codetools.requiredFilesAndProducts. The check also reports syntax
+% errors and unresolved fmri_* references.
+%
+% Dependency analysis can take several minutes.
 %
 % RUNTIME. Dependency analysis is slow, roughly a second per file, so the whole
-% toolbox takes a few minutes. This is a pre-release check, not one to run on
-% every edit.
+% toolbox takes a few minutes.
 %
 % Usage:
 %   results = runtests('test_no_toolbox_dependencies')
@@ -21,12 +20,8 @@ end
 
 
 function setupOnce(tc)
-% The toolbox root is wherever fmritoolbox_setup sits (paper Section 7.1).
-% Files are gathered RECURSIVELY so that core/, demo/ and core/private/ are all
-% covered whatever the install layout. The previous version of this script
-% globbed a single folder taken from which('fmri_showslices'), which resolves
-% to core/ - so its demo*.m pattern matched nothing and no demo was ever
-% checked, despite the header saying otherwise.
+% Locate the toolbox root from fmritoolbox_setup and scan all MATLAB files
+% recursively so core/, private helpers, demos and tools are included.
 setup_path = which('fmritoolbox_setup');
 if isempty(setup_path)
     assumeFail(tc, ...
@@ -34,17 +29,13 @@ if isempty(setup_path)
 end
 root = fileparts(setup_path);
 
-% EVERY shipped .m file, not just fmri_*.m and demo_*.m. Those two patterns
-% miss fmritoolbox_setup.m (no underscore after "fmri"), which every demo calls
-% on its first line, and they miss tools/, core/private/ helpers not named
-% fmri_* such as tiedrank_local, and demo-support files like rsn_compare_demo.
-% The claim is about the toolbox, so the sweep has to cover the toolbox.
+% Scan every shipped .m file ensuring that setup scripts, private helpers
+% and demo-support files are also checked.
 files = dir(fullfile(root, '**', '*.m'));
 
-% Two exclusions. external/ holds the redistributed NIfTI toolbox, which is not
-% ours to vouch for. The test folder is excluded because a test may legitimately
-% call a MathWorks function in order to check that the toolbox's own
-% replacement agrees with it - that is a cross-check, not a dependency.
+% Exclude external dependencies and tests. The bundled NIfTI library is
+% third-party code, while tests may intentionally call toolbox functions for
+% comparison.
 if ~isempty(files)
     folders = {files.folder};
     drop    = contains(folders, [filesep 'external']) | ...
@@ -89,7 +80,7 @@ end
 
 function [unparsable, offenders, n_checked] = scan(tc)
 % One sweep, used by both tests. A file that will not parse is recorded and
-% skipped rather than allowed to abort the loop.
+% skipped so it doesn't abort the loop.
 files      = tc.TestData.files;
 unparsable = {};
 offenders  = {};
@@ -115,29 +106,20 @@ end
 
 
 function testToolboxFilesWereActuallyFound(tc)
-% A dependency sweep that silently examines nothing would pass. This pins the
-% sweep to a plausible file count so an empty or truncated search is a failure
-% rather than a green tick - which is the failure mode the previous version
-% had for the demos.
+% Verify that the scan found a plausible number of files, so an empty or
+% incomplete search cannot pass unnoticed.
 n = numel(tc.TestData.files);
 verifyGreaterThan(tc, n, 90, sprintf( ...
-    ['Only %d .m files found under %s. The toolbox has 83 public functions, ', ...
+    ['Only %d .m files found under %s. The toolbox has 84 public functions, ', ...
      'seven private helpers and eleven demos, so the search is not reaching ', ...
      'them. Raise this floor once the file count is stable.'], ...
     n, tc.TestData.root));
 end
 
 function testEveryToolboxCallResolves(tc)
-% A misspelled fmri_* name parses fine and fails only at run time. The
-% real-data demo takes 85 minutes to reach its last section, so a typo there is
-% expensive to find by running the thing.
-%
-% Resolution is checked against the FILE LIST, not which(). which() cannot see
-% core/private - that is the point of a private folder, and fmritoolbox_setup
-% deliberately keeps it off the path - so a which()-based check reports every
-% private helper (fmri_asvoxtime, fmri_restoreformat, fmri_bwlabel3d,
-% fmri_actmask, fmri_ticklabel) as undefined, and reports each file's own
-% declaration line as a call to an undefined function.
+% Check fmri_* references against the complete file list so misspelled or
+% missing function names are caught before runtime. Use the file list, not
+% the WHICH because private helpers are absent from the path.
 files   = tc.TestData.files;
 defined = erase({files.name}, '.m');
 

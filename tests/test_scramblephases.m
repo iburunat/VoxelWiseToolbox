@@ -1,14 +1,8 @@
 % TEST_SCRAMBLEPHASES  Does the DIM argument scramble the axis it claims to?
 %
-% fmri_scramblephases originally applied an N-dimensional FFT, which scrambles
-% every dimension jointly. For a VOXELS x TIME matrix that also randomises phase
-% across voxels, destroying the spatial arrangement along with the temporal one -
-% almost never what is wanted, and silent when it happens.
-%
-% These tests check that DIM = 2 does what the vectorised loop over rows would
-% do, that the amplitude spectrum survives, that the ambiguous 2D case warns,
-% and that fmri_isc still agrees with itself now that it delegates here rather
-% than carrying its own copy.
+% Verifies that DIM controls the scrambling axis correctly. The tests check
+% spectrum preservation, consistency with row-wise scrambling, the warning for
+% ambiguous 2D input, and permutation testing through fmri_isc.
 %
 % See also: fmri_scramblephases, fmri_isc, fmri_acfestimate
 
@@ -35,9 +29,8 @@ assert(isreal(S), 'Output is not real; the conjugate symmetry was broken.');
 fprintf('  preserved\n\n');
 
 %% --- DIM = 2 matches a per-row loop ---------------------------------------
-% Not value-for-value: each call draws its own random phases. What must match is
-% the STATISTICAL behaviour - every row keeps its own spectrum and loses its
-% temporal alignment - so the test compares spectra, not samples.
+% Each call generates different random phases, so compare the preserved
+% amplitude spectra rather than the scrambled values themselves.
 fprintf('--- DIM = 2 vs a per-row loop ---\n');
 L = zeros(V, T);
 for v = 1:V
@@ -51,10 +44,9 @@ fprintf('  %s\n\n', ternary(d2 < 1e-10, 'the vectorised and looped forms agree',
 assert(d2 < 1e-10, 'Vectorised and looped forms disagree (relative error %.2e)', d2); 
 
 %% --- the scrambling is temporal, not spatial ------------------------------
-% The decisive check. Column correlations across voxels should survive DIM = 2
-% (each row is scrambled independently, so the spatial pattern at a given time
-% is destroyed) - but crucially, the ROW spectra survive while the row VALUES
-% decorrelate from the original. Joint scrambling would destroy both.
+% Verify that DIM = 2 preserves each row's temporal amplitude spectrum while
+% disrupting its alignment with the original time series. DIM = 1 instead
+% preserves the amplitude spectrum along the voxel dimension.
 fprintf('--- temporal, not joint ---\n');
 r_row = mean(arrayfun(@(v) fmri_corrmat(M(v,:)', S(v,:)'), 1:V));
 fprintf('  mean fmri_corrmat(original row, scrambled row) : %+.3f (expect near 0)\n', r_row);

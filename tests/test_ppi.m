@@ -2,14 +2,9 @@
 %
 % Builds voxels with KNOWN coefficients and checks that fmri_ppi recovers them.
 %
-% The test that matters most is the SPECIFICITY one (voxel B below). Background
-% voxels are pure noise, so a near-zero interaction beta there is unsurprising
-% and proves little. The failure mode worth catching is a voxel with strong
-% seed and psychological main effects but NO interaction: if the design matrix
-% were wrong - main effects omitted, or regressors not demeaned before forming
-% the product - the interaction term would absorb those main effects and return
-% a large beta_ppi. That is a broken PPI producing confident nonsense, and only
-% voxel B detects it.
+% The key specificity test is voxel B, which has strong seed and psychological
+% main effects but no interaction. BETA_PPI should remain near zero, confirming
+% that the interaction does not absorb the main effects.
 %
 % See also: fmri_ppi, fmri_ttest
 
@@ -29,10 +24,8 @@ data = 0.2 * randn(N, T);
 data(seed_mask, :) = seed_ts_true' + 0.05 * randn(nnz(seed_mask), T);
 
 %% --- psychological regressor ----------------------------------------------
-% Deliberately NOT demeaned and with a non-zero offset. A real caller passes a
-% raw HRF-convolved regressor, and fmri_ppi is responsible for centring it. The
-% supplied version of this test demeaned psych before the call, so the
-% function's own demeaning was never exercised.
+% Use a non-centred regressor to verify that fmri_ppi centres it internally
+% before forming the interaction term.
 psych_raw = zeros(T, 1);
 psych_raw(51:100)  = 1;
 psych_raw(151:180) = 1;
@@ -87,9 +80,8 @@ assert(abs(beta_psych(vB) - 2.0) < 0.3, 'beta_psych wrong at voxel B: %.3f', bet
 fprintf('  main effects did NOT leak into the interaction\n\n');
 
 %% --- demeaning of a non-centred regressor ---------------------------------
-% psych_raw carries an offset of 3. If the function did not demean it, the
-% interaction would be dominated by 3*seed - i.e. a main effect - and voxel B
-% above would already have failed. This restates the same guarantee explicitly.
+% PSYCH_RAW has an offset of 3. If it were not centred, the interaction would
+% contain a strong seed main-effect component, causing voxel B to fail.
 fprintf('--- non-centred psych (offset 3) handled ---\n');
 fprintf('  mean(psych_raw) = %.3f, and voxel B still clean\n\n', mean(psych_raw));
 

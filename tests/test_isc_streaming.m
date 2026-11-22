@@ -1,18 +1,12 @@
 % TEST_ISC_STREAMING  Does the streaming path give the same answer as the array?
 %
-% The streaming leave-one-out computation replaces
-%       mean(data(:,:,[1:s-1 s+1:end]), 3)
-% with
-%       (total - data(:,:,s)) / (N-1)
-% which is algebraically identical but reaches the same numbers by a different
-% route. This test asserts they agree to floating-point tolerance rather than
-% assuming it, because a subtraction-based mean can differ in the last bits from
-% a direct one and an error in the (N-1) divisor would be invisible in a single
-% map inspected by eye.
+% The streaming implementation calculates each leave-one-out mean as:
 %
-% Also checks that the paths refused for streaming - pairwise and permutations -
-% raise their own identifiers rather than failing obscurely or, worse, running
-% for hours.
+%     (total - data(:,:,s)) / (N - 1)
+%
+% This test verifies that streaming and in-memory results agree within
+% floating-point tolerance. It also checks that unsupported streaming options,
+% pairwise ISC and permutation testing, return the expected errors.
 %
 % See also: fmri_isc
 

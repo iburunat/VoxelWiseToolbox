@@ -1,15 +1,14 @@
 function tests = test_bwlabel3d
 % TEST_BWLABEL3D  Unit tests for fmri_bwlabel3d.
 %
-% Validates the pure MATLAB connected-component labelling that replaced SPM's
-% compiled spm_bwlabel. Run with:
+% Tests the pure-MATLAB connected-component labelling implemented by
+% fmri_bwlabel3d. Run with:
 %
-%   results = runtests('test_bwlabel3d')
+%   results = runtests('test_bwlabel3d');
 %
-% The comparison against spm_bwlabel is skipped automatically if SPM is not on
-% the path, so the suite passes on a clean, SPM-free installation. When SPM is
-% available, the two implementations are required to agree exactly, including
-% label ordering.
+% If SPM is available, the tests also compare the output with spm_bwlabel,
+% including cluster labels and their ordering. This comparison is skipped
+% when SPM is not installed.
 %
 % See also: fmri_bwlabel3d, fmri_bwlabel
 

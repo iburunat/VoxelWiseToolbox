@@ -1,14 +1,12 @@
 function tests = test_tfce
 % TEST_TFCE  Threshold-free cluster enhancement against a reference.
 %
-% The core property is that TFCE integrates cluster extent across a THRESHOLD
-% STACK - a voxel is on whenever data >= h - and not across a partition of the
-% value range. An independent reference implementation is built below and
-% compared, because the two differ by an order of magnitude and the partition
-% form produces a map that looks plausible on its own.
+% Verifies that TFCE integrates cluster extent over cumulative thresholded
+% maps, where a voxel contributes at every threshold below its value. The
+% output is compared with an independent implementation of the TFCE definition.
 %
-% Backs the claim in Section 5.2 that the implemented function reproduces the
-% analytic extent-scaling ratio.
+% Backs the claim in Section 5.2 of the manuscript that the implemented 
+% function reproduces the analytic extent-scaling ratio.
 %
 % Usage:
 %   results = runtests('test_tfce')
@@ -20,8 +18,8 @@ end
 
 
 function setupOnce(tc)
-% One structured map, reused by every test: a smooth bump plus rectified noise,
-% so the threshold stack has both a genuine cluster and scattered debris.
+% Create a smooth cluster with positive noise, giving both structured and
+% scattered suprathreshold voxels.
 rng(0);
 s1   = fmri_sub2ind([35 60 45]);
 D1   = fmri_voxdist(s1, 1:228453)';
@@ -42,9 +40,8 @@ end
 
 
 function testMatchesReferenceImplementation(tc)
-% The decisive test. reference_tfce below is written from the definition, not
-% from the implementation, so agreement is evidence about the method rather
-% than about shared code.
+% Compare with an independent implementation written directly from the TFCE
+% definition.
 t    = tc.TestData.t;
 tref = reference_tfce(tc.TestData.data, 0.5, 2, 50);
 
@@ -59,10 +56,8 @@ end
 
 
 function testPartitionFormWouldBeWrong(tc)
-% A regression guard, not a property of the function. An earlier version
-% partitioned the value range with fmri_bin instead of stacking thresholds,
-% which yields a map an order of magnitude too small - and nothing about that
-% map looks wrong in isolation. If someone reimplements it that way, this fails.
+% Verify that partitioning values into separate bins does not reproduce the
+% cumulative threshold-stack calculation required by TFCE.
 t    = tc.TestData.t;
 tbin = bin_based_tfce(tc.TestData.data, 0.5, 2, 50);
 
@@ -75,9 +70,8 @@ end
 
 
 function testConvergesWithThresholdCount(tc)
-% The integral is evaluated by the midpoint rule, so the result must settle as
-% N grows. A large change between 100 and 200 would mean the default of 50 is
-% too coarse for this kind of map.
+% Verify that the numerical integral stabilises as the number of threshold
+% bins increases.
 data = tc.TestData.data;
 m = arrayfun(@(N) max(fmri_tfce(data, 0.5, 2, N)), [25 50 100 200]);
 
@@ -88,9 +82,8 @@ end
 
 
 function testPeakIsHighInTheTfceMap(tc)
-% TFCE weights by extent as well as height, so the data peak need not be the
-% TFCE peak - but it must be near the top, since it sits inside the largest
-% cluster at every threshold.
+% The data peak need not be the TFCE peak, but it should rank highly because
+% it belongs to the main cluster across the threshold range.
 [~, dpk] = max(tc.TestData.data);
 pk_rank  = sum(tc.TestData.t >= tc.TestData.t(dpk));
 
@@ -100,8 +93,7 @@ end
 
 
 function testExponentsChangeTheResult(tc)
-% E and H must actually reach the computation. A function that silently ignored
-% them would pass every other test here.
+% Verify that changing the extent and height exponents changes the result.
 data = tc.TestData.data;
 t    = tc.TestData.t;
 
@@ -119,9 +111,8 @@ end
 
 
 function testInvalidInputIsRejected(tc)
-% ?MException matches any error, which is what the original script checked.
-% Tighten these to the specific fmri_tfce: identifiers once they are settled -
-% an identifier check also catches an error raised for the wrong reason.
+% Accept any error for now; replace ?MException with specific fmri_tfce error
+% identifiers once the validation interface is finalised.
 data = tc.TestData.data;
 
 verifyError(tc, @() fmri_tfce([data data]), ?MException, ...
@@ -166,9 +157,9 @@ end
 
 
 function out = bin_based_tfce(data, E, H, N)
-% The PREVIOUS, INCORRECT form, kept only so the regression guard above has
-% something to compare against. It partitions the value range into bins, so a
-% voxel contributes to one bin rather than to every threshold below it.
+% Alternative bin-based calculation used only by the regression test. Each
+% voxel contributes to one value bin rather than every threshold below it,
+% so this is not the TFCE threshold-stack calculation.
 hmax = max(data);
 out  = zeros(size(data));
 if hmax <= 0, return; end

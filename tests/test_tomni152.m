@@ -33,17 +33,14 @@ if ~exist(tc.TestData.fix, 'dir')
           'Fixture directory not found: %s', tc.TestData.fix);
 end
 
-% fmri_tomni152 depends on the bundled NIFTI_20130306 toolbox (Jimmy Shen):
-% load_untouch_nii, load_untouch_nii_hdr, save_untouch_nii. If it is not on
-% the path, skip the whole suite with a clear message rather than erroring on
-% every test. Add it to your path (e.g. addpath(genpath('.../NIFTI_20130306')))
-% before running.
+% Skip the suite if the bundled NIfTI library is unavailable, rather than
+% returning the same dependency error for every test.
 tc.TestData.haveNifti = ~isempty(which('load_untouch_nii_hdr'));
 end
 
 function setup(tc)
 % Runs before every test. Skip cleanly if the NIFTI toolbox is unavailable, so
-% a missing dependency reports as "skipped" rather than a wall of errors.
+% a missing dependency reports as "skipped".
 assumeTrue(tc, tc.TestData.haveNifti, ...
     ['NIFTI_20130306 toolbox not on the MATLAB path (load_untouch_nii_hdr ' ...
      'not found). Add it before running: addpath(genpath(''.../NIFTI_20130306'')).']);
@@ -60,10 +57,8 @@ out = fullfile(tc.TestData.tmp, [name '.nii']);
 end
 
 function in = infile(tc, name)
-% Fixtures are stored gzipped to keep the repository small. If the bundled NIFTI
-% toolbox cannot read .nii.gz directly, decompress on demand into the temp dir so
-% the rest of the suite still runs. (testGzippedInput tests .nii.gz support
-% explicitly; the other tests should not fail merely because of it.)
+% Fixtures are stored as .nii.gz files to reduce repository size. Decompress
+% them into the temporary folder when an uncompressed file is required.
 gz = fullfile(tc.TestData.fix, [name '.gz']);
 in = fullfile(tc.TestData.fix, name);
 
@@ -81,10 +76,8 @@ end
 end
 
 % -------------------------------------------------------------------------
-% Local readers, so the suite does not depend on fmri_readnii being on the path
-% (its location varies by install) and does not use the low-level
-% load_untouch_nii_hdr, which requires three arguments. Both go through
-% load_untouch_nii, which fmri_tomni152 itself uses.
+% Read fixture data and headers through load_untouch_nii, matching the
+% NIfTI-loading path used by fmri_tomni152.
 % -------------------------------------------------------------------------
 function data = readvol(fn)
 nii  = load_untouch_nii(fn);
@@ -100,9 +93,8 @@ end
 % The canonical acceptance test -- the one the handover calls central
 % =========================================================================
 function testVectorisesTo228453(tc)
-% The toolbox-level integration test. If the conversion produced the right
-% grid, fmri_vol2vect must return exactly the fixed vector length. This is the
-% single test that says the conversion succeeded.
+% Verify that the converted volume lies on the toolbox grid and vectorises to
+% exactly 228453 brain voxels.
 if isempty(which('fmri_vol2vect'))
     assumeFail(tc, 'fmri_vol2vect not on path; skipping vectorisation integration test.');
 end
@@ -119,9 +111,8 @@ end
 % Identity: an image already on the MNI152 2mm grid must come back unchanged
 % =========================================================================
 function testIdentityIsLossless(tc)
-% Resampling an image that is already on the target grid must be a no-op. If
-% this fails, the coordinate mapping is wrong -- an off-by-one in the 0-based
-% to 1-based conversion would show up here and almost nowhere else.
+% An image already on the target grid should remain unchanged. This detects
+% errors in the mapping between zero-based NIfTI and one-based MATLAB indices.
 o = outfile(tc, 'ident');
 in = infile(tc, 'test_mni152_2mm.nii');
 fmri_tomni152(in, o, 'verbose', 0);
@@ -184,9 +175,8 @@ end
 % Label images -- nearest neighbour must not invent labels
 % =========================================================================
 function testAtlasLabelsArePreserved(tc)
-% The defining property of a correct atlas resampling: the output must contain
-% no label value that was not in the input. Linear interpolation would create
-% values like 1.5 at region boundaries, silently corrupting the parcellation.
+% Nearest-neighbour resampling must preserve the original atlas labels and
+% must not create new values at region boundaries.
 o = outfile(tc, 'atlas');
 in = infile(tc, 'test_atlas_labels.nii');
 fmri_tomni152(in, o, 'interp', 'nearest', 'verbose', 0);
@@ -194,9 +184,8 @@ fmri_tomni152(in, o, 'interp', 'nearest', 'verbose', 0);
 a = readvol(in);
 b = readvol(o);
 
-% Cast to double before comparing: the input atlas keeps its native storage
-% type (e.g. int16), while fmri_tomni152 always outputs single. ismember and
-% verifyEqual both require matching classes (or double), so normalise here.
+% Convert both label sets to double because the input and output may use
+% different numeric classes.
 in_labels  = double(unique(a(:)));
 out_labels = double(unique(b(:)));
 
@@ -220,10 +209,8 @@ end
 % Header paths: qform, qfac
 % =========================================================================
 function testQformOnlyMatchesSform(tc)
-% A qform-only file describes the same geometry as the equivalent sform file,
-% so the two must resample to the same result. This exercises the quaternion
-% decomposition in qform_to_affine, which is the most error-prone code path in
-% the function.
+% Equivalent qform and sform affines must produce the same resampled image,
+% verifying the qform-to-affine conversion.
 o1 = outfile(tc, 'qf');
 o2 = outfile(tc, 'sf');
 fmri_tomni152(infile(tc, 'test_qform_only.nii'), o1, 'verbose', 0);
@@ -277,9 +264,9 @@ end
 % Intensity scaling
 % =========================================================================
 function testSclSlopeInterApplied(tc)
-% load_untouch_nii returns STORED values. The physical values are
-% stored*slope + inter, and the function must apply this itself. If it does
-% not, every intensity in the output is wrong.
+% Verify that stored intensities are converted to physical values using:
+%
+%     physical = stored * scl_slope + scl_inter
 o = outfile(tc, 'scl');
 fmri_tomni152(infile(tc, 'test_scl_scaling.nii'), o, 'verbose', 0);
 
@@ -297,9 +284,8 @@ end
 % The guard that matters most: native-space input
 % =========================================================================
 function testFarOutOfSpaceInputIsRejected(tc)
-% The unambiguous failure: an input whose field of view barely intersects MNI152
-% space at all. Without this guard the function would write an essentially empty
-% file and report success, which is the worst possible failure mode.
+% Reject an input with negligible overlap with the MNI152 target grid, which
+% would otherwise produce an almost empty output.
 o = outfile(tc, 'faraway');
 verifyError(tc, ...
     @() fmri_tomni152(infile(tc, 'test_far_out_of_space.nii'), o, 'verbose', 0), ...
@@ -309,15 +295,9 @@ end
 function testNativeSpaceIsNotReliablyDetectable(tc)
 % A deliberately honest test, documenting a real limitation rather than hiding it.
 %
-% A native-space image with a plausible scanner origin overlaps MNI152 space
-% geometrically, so it passes every automatic check and is resampled without
-% complaint -- producing a spatially meaningless result. There is no header-based
-% test that separates it from a correctly normalised image.
-%
-% This test asserts that the function DOES process such a file, so that if
-% someone later adds a guard claiming to catch this case, they must confront the
-% fact that it cannot be caught reliably, and must update this test deliberately.
-% The user's responsibility to verify normalisation is documented in the header.
+% Document the limitation that a plausible affine cannot prove MNI
+% normalisation. A native-space image may overlap the target grid and be
+% resampled successfully despite being spatially incorrect.
 o = outfile(tc, 'native');
 fmri_tomni152(infile(tc, 'test_native_space.nii'), o, 'verbose', 0);
 verifySize(tc, readvol(o), [91 109 91], ...
@@ -325,9 +305,8 @@ verifySize(tc, readvol(o), [91 109 91], ...
 end
 
 function testSmallRoiMaskIsNotRejected(tc)
-% A small ROI mask is almost entirely zeros but perfectly well placed. A guard
-% based on the non-zero fraction of the output would wrongly reject it; the
-% coverage-based guard must not.
+% Verify that a correctly positioned sparse ROI is not rejected. Spatial
+% coverage, and not the proportion of non-zero voxels, determines overlap.
 o = outfile(tc, 'roi');
 fmri_tomni152(infile(tc, 'test_small_roi.nii'), o, 'interp', 'nearest', 'verbose', 0);
 b = readvol(o);
@@ -388,9 +367,8 @@ verifyEqual(tc, double(h.dime.scl_inter), 0, 'AbsTol', 1e-6);
 end
 
 function testAnteriorCommissureMapsToOrigin(tc)
-% The defining property of the canonical affine: NIfTI voxel [45 63 36]
-% (MATLAB [46 64 37]) is world [0 0 0]. Asserted directly against the written
-% header, so a corrupted affine cannot slip through.
+% Verify that the canonical affine maps NIfTI voxel [45 63 36], equivalent to
+% MATLAB index [46 64 37], to the world origin [0 0 0] mm.
 o = outfile(tc, 'ac');
 fmri_tomni152(infile(tc, 'test_mni152_2mm.nii'), o, 'verbose', 0);
 

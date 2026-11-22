@@ -4,17 +4,13 @@ function tests = test_stats_conversions
 % Covers fmri_fisherz, fmri_fisherz2p, fmri_r2p, fmri_p2r, fmri_p2t, fmri_effdf,
 % fmri_combinep and fmri_ttest.
 %
-% The p-value functions are checked against their NULL DISTRIBUTIONS, which is
-% the property that matters: a p-value must satisfy P(p < a) = a. A t-map alone
-% looks plausible whatever the CDF or the degrees of freedom; a false-positive
-% rate does not.
+% P-value calibration is tested under the null, where the proportion below
+% alpha should equal alpha. Reference values come from published t tables,
+% analytic identities and inverse-function checks, without requiring the
+% Statistics and Machine Learning Toolbox.
 %
-% They are NOT checked against the Statistics and Machine Learning Toolbox. The
-% toolbox is deliberately free of it, so the references here are published t
-% tables, analytic identities and the functions' own inverses.
-%
-% Backs the claim in Section 5.2 that the conversions are calibrated to within
-% 0.001 of nominal across 20 000 simulations.
+% Several tests use 20,000 vectorised simulations and complete in a few
+% seconds.
 %
 % RUNTIME. A few seconds, despite several tests running 20 000 simulations
 % each: the simulations are vectorised over voxels rather than looped.
@@ -69,10 +65,8 @@ end
 
 
 function testR2pIsCalibratedUnderTheNull(tc)
-% At TAIL = 2 the two outputs are the SAME two-tailed p-value. That is the
-% documented contract and it is deliberate: doubling a directional one-tailed p
-% gives values above 1 for one sign of r, and a map thresholded on those would
-% silently exclude every voxel of that sign.
+% With TAIL = 2, both outputs contain the same two-tailed p-value, which
+% depends on |r| rather than its sign.
 [p_pos, p_neg] = fmri_r2p(tc.TestData.rnull, tc.TestData.Nobs);
 
 verifyEqual(tc, p_pos, p_neg, 'AbsTol', 0, ...
@@ -114,8 +108,8 @@ end
 
 
 function testPassingNminus2IsConservative(tc)
-% The old docstring advised passing N-2. It is not an error that shows up as a
-% crash: it quietly costs power. Recorded here so the advice cannot creep back.
+% Verify that passing N-2 instead of N produces unnecessarily conservative
+% p-values and therefore reduces power.
 p       = fmri_r2p(tc.TestData.rnull, tc.TestData.Nobs);
 p_wrong = fmri_r2p(tc.TestData.rnull, tc.TestData.Nobs - 2);
 
@@ -168,9 +162,8 @@ end
 
 
 function testEffdfKeepsTheTestCalibrated(tc)
-% The property that matters, and the reason fmri_effdf exists: two INDEPENDENT
-% autocorrelated series must be called significant at the nominal rate. Without
-% the correction this rate is several times too high.
+% Verify that fmri_effdf keeps the false-positive rate near its nominal level
+% when two independent series are autocorrelated.
 rng(3);
 nsim = 4000; Nt = 200;
 pv = zeros(nsim, 1);
@@ -193,9 +186,8 @@ end
 % =========================================================================
 
 function testCombinepIsCalibratedUnderTheNull(tc)
-% The median method previously returned the raw median, giving P(p<0.05) near
-% 0.001 rather than 0.05 - a combination that looked conservative and was
-% simply wrong.
+% Verify that the median method produces calibrated combined p-values under
+% the null rather than returning the unadjusted median.
 rng(4);
 pn = rand(20000, 5);
 for m = {'fisher', 'stouffer', 'median'}
@@ -340,10 +332,8 @@ end
 
 
 function testTtestNeutralisesConstantVoxels(tc)
-% This asserts the VALUES, not just finiteness. An earlier version tested only
-% isfinite and passed while a constant voxel was reported as t = 1.1e16,
-% p = 1e-110 - the single most significant voxel in the map. 1e16 is finite, so
-% the weaker check saw nothing wrong.
+% Verify the expected values t = 0 and p = 1 for constant voxels. Checking
+% finiteness alone would not detect extremely large but finite statistics.
 rng(15);
 Z = randn(10, 8);
 Z(3, :) = 2.5;                                % no variance
@@ -403,4 +393,3 @@ verifyError(tc, @() fmri_ttest(complex(randn(10,5))), ...
 verifyError(tc, @() fmri_ttest(randn(10,5), complex(randn(10,5))), ...
                                        'fmri_ttest:complexInput', 'ttest complex data2');
 end
-
