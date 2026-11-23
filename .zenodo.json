@@ -1,0 +1,34 @@
+{
+  "title": "VoxelWise Toolbox",
+  "upload_type": "software",
+  "license": "MIT",
+  "version": "v1.0.1",
+  "description": "<p>A lightweight, dependency-free MATLAB library for human fMRI analysis. All brain data is held in a single fixed layout&mdash;the 228,453 in-brain voxels of the 91&times;109&times;91 MNI152 2 mm template&mdash;so the analysis functions compose freely with one another, with no wrapping or format conversion. Aimed particularly at continuous-feature and naturalistic paradigms, where the discrete-event assumptions of conventional designs do not hold.</p>",
+  "notes": "If you use this toolbox, please cite both the software and the paper.",
+  "creators": [
+    {
+      "name": "Burunat, Iballa",
+      "affiliation": "Department of Music, Art and Culture Studies, University of Jyväskylä, Finland",
+      "orcid": "0000-0003-3948-1414"
+    },
+    {
+      "name": "Alluri, Vinoo",
+      "affiliation": "Cognitive Science Lab, International Institute of Information Technology, Hyderabad, India",
+      "orcid": "0000-0003-3689-1039"
+    },
+    {
+      "name": "Toiviainen, Petri",
+      "affiliation": "Department of Music, Art and Culture Studies, University of Jyväskylä, Finland",
+      "orcid": "0000-0001-6962-2957"
+    }
+  ],
+  "keywords": [
+    "fMRI",
+    "MATLAB",
+    "naturalistic neuroimaging",
+    "voxel-wise analysis",
+    "functional connectivity",
+    "brain atlas",
+    "neuroimaging visualisation"
+  ]
+}
