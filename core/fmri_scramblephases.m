@@ -10,8 +10,8 @@ function fs = fmri_scramblephases(f, dim)
 % same spectral properties as the observed data but without its original
 % phase relationships. Phase-scrambled surrogates can be used to build 
 % permutation null distributions while preserving spatial or temporal 
-% autocorrelation. This approach is used by fmri_acfestimate and 
-% fmri_csdist for cluster-size correction.
+% autocorrelation. fmri_acfestimate uses it to build the null regressors
+% from which the smoothing kernel is estimated.
 %
 % Usage:
 %   fs = fmri_scramblephases(f)        % scramble across ALL dimensions

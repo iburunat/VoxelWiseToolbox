@@ -6,10 +6,11 @@ function z = fmri_fisherz(r, df)
 %
 % Inputs:
 %   R   - Correlation coefficient(s), any shape. Values in [-1, 1].
-%   DF  - Effective sample size, NOT N-2. For independent samples this is the
-%         number of observations N; for autocorrelated time series use
+%   DF  - Effective sample size, NOT N-2. For independent samples this is
+%         the number of observations N; for autocorrelated time series use
 %         fmri_effdf, which returns N when there is no autocorrelation and
-%         less when there is. The standardisation is sqrt(DF-3), the usual
+%         less when there is. For a partial correlation controlling C
+%         confounds, pass N-C. The standardisation is sqrt(DF-3), the usual
 %         Fisher form.
 %
 % Outputs:

@@ -88,6 +88,18 @@ if size(Y, 1) < size(Z, 2) + 3
         size(Z, 2), size(Z, 2) + 3, size(Y, 1));
 end
 
+if any(std(Z) == 0)
+    error('fmri_partcorr:constantConfound', ...
+        ['Z has a constant column (%s). Z is z-scored internally, so a ' ...
+         'constant column\nbecomes NaN and RHO comes back all NaN. Do not ' ...
+         'include an intercept: x, Y and Z\nare centred internally, so one ' ...
+         'is unnecessary.'], mat2str(find(std(Z) == 0)));
+end
+if std(x) == 0
+    error('fmri_partcorr:constantRegressor', ...
+          'x is constant, so it cannot be correlated with anything.');
+end
+
 % Column-wise z-score without the Statistics Toolbox.
 x = x(:);
 x = (x - mean(x)) ./ std(x);

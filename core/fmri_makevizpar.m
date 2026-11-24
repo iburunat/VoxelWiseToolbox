@@ -36,7 +36,8 @@ function p = fmri_makevizpar(varargin)
 %   P.CROP         - Bounding box. Default: [1 91 1 109 1 91] (full brain)
 %   P.GREYPAR      - Depth shading, 0=flat to 1=strong. Default: 0.4
 %   P.TXT          - Show slice index on each tile (0/1). Default: 1
-%   P.LEVEL        - Isosurface value (see fmri_show3d). Default: 0.1
+%   P.LEVEL        - Isosurface value (in data units, see fmri_show3d).
+%                    Default: 0.1
 %   P.SURFALPHA    - Activation surface opacity (0-1). Default: 1
 %   P.PLANE        - 1=axial, 2=sagittal, 3=coronal. Default: 1. Not every
 %                    viewer accepts all three. fmri_braincake implements all
@@ -117,7 +118,7 @@ p.overlayalpha  = 1;           % Overlay opacity (slice views) — showslices, s
 p.crop          = [1 91 1 109 1 91]; % Bounding box [xmin xmax ymin ymax zmin zmax] — show3d, showcortex
 p.greypar       = 0.4;         % Depth shading strength (0=flat, 1=strong) — show3d
 p.txt           = 1;           % Show slice index (0/1)
-p.level         = 0.1;         % Isosurface threshold (fraction of max)
+p.level         = 0.1;         % Isosurface value, in data units (see fmri_show3d)
 p.surfalpha     = 1;           % Surface opacity (0-1)
 p.plane         = 1;           % Slice orientation: 1=axial, 2=sagittal, 3=coronal
 p.interval      = 2;           % Voxel spacing between displayed slices (1 or 2)

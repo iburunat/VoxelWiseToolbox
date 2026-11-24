@@ -181,7 +181,7 @@ set(gcf,'PaperPosition',pos);
 
 % Coordinate label size, scaled to the figure.
 figpos  = get(gcf,'Position');
-labelfs = max(8, min(24, round(figpos(4)/16)));
+labelfs = 0.085;
 
 % Coordinate labels must contrast with whatever background was chosen.
 bgrgb0 = bg_to_rgb(bgcolor);
@@ -200,7 +200,7 @@ for k=1:3
     tmp(:,:,k)=interp2(squeeze(tmp2(:,:,k))',y,z);
 end
 image(tmp)
-text(8,22,['x = ' num2str(coord_mm(1))],'color',labelcol,'fontsize',labelfs)
+text(8,22,['x = ' num2str(coord_mm(1))],'color',labelcol, 'FontUnits','normalized','FontSize',labelfs)
 axis off
 
 % coronal view
@@ -212,7 +212,7 @@ for k=1:3
     tmp3(:,:,k)=interp2(squeeze(tmp2(:,91:-1:1,k))',x,z);
 end
 image(tmp3)
-text(8,22,['y = ' num2str(coord_mm(2))],'color',labelcol,'fontsize',labelfs)
+text(8,22,['y = ' num2str(coord_mm(2))],'color',labelcol, 'FontUnits','normalized','FontSize',labelfs)
 axis off
 
 % axial view
@@ -224,7 +224,7 @@ for k=1:3
     tmp5(:,:,k)=interp2(squeeze(tmp4(:,:,k)),x,y);
 end
 image(tmp5)
-text(8,22,['z = ' num2str(coord_mm(3))],'color',labelcol,'fontsize',labelfs)
+text(8,22,['z = ' num2str(coord_mm(3))],'color',labelcol, 'FontUnits','normalized','FontSize',labelfs)
 axis off
 
 % Background
@@ -239,6 +239,7 @@ if cbar
          'fontsize',12);
    set(h,'Color', labelcol);
 end
+
 
 % -------------------------------------------------------------------------
 function rgb = bg_to_rgb(bg)
