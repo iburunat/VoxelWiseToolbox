@@ -13,13 +13,13 @@ Usage
 
 .. code-block:: matlab
 
-   X4D  = fmri_simget(X_compressed, svd_info, p)
-   data = fmri_simget(X_compressed, svd_info, p, 1)
+   data = fmri_simget(X_compressed, svd_info, p)       % 228453 x T
+   X4D  = fmri_simget(X_compressed, svd_info, p, 0)    % 91 x 109 x 91 x T
 
 Inputs
 ------
 
-- **X_COMPRESSED** -- Cell array {1 x N_PARTICIPANTS} of SVD-compressed data. Each cell contains a struct with fields U, S, V. One participant is reconstructed per call: data = fmri_simget(X_COMPRESSED, SVD_INFO, p); which returns that participant's 228453 x T time series, ready for any analysis function. Reconstruct one at a time.
+- **X_COMPRESSED** -- Cell array {1 x N_PARTICIPANTS} of SVD-compressed data. Each cell contains a struct with fields U, S, V. Reconstruct one participant at a time.
 - **SVD_INFO** -- Struct array (1 x N) with the singular values and volume dimensions, as returned by fmri_simdata.
 - **P** -- Participant index (integer in [1, N]).
 - **AS_VECTOR** -- If 1 (default), return vectorized brain data (228453 x T). If 0, return the full 4D volume (91 x 109 x 91 x T).
@@ -33,13 +33,6 @@ Examples
 --------
 
 .. code-block:: matlab
-
-   % Extract participant 2 as 4D volume
-   X4D  = fmri_simget(X_comp, svd_info, 2);
-
-   % Extract directly as brain vector for analysis
-   data = fmri_simget(X_comp, svd_info, 1, 1);   % 228453 x T
-   r    = fmri_corregressor(regressor, data);
 
    % Analyse one participant: reconstruct, then correlate with the task
    [X_comp, S_3D, W, svd_info] = fmri_simdata(10, 8, 200, 2);

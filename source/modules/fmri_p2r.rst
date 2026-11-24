@@ -20,7 +20,7 @@ Inputs
 ------
 
 - **P** -- Desired p-value threshold, e.g. 0.001. May be a vector.
-- **DF** -- Degrees of freedom. For a single time series this is the EFFECTIVE df from fmri_effdf, not the number of time points - see below.
+- **DF** -- Effective sample size, NOT N-2. For independent samples this is the number of observations N; for autocorrelated time series use fmri_effdf, which returns N when there is no autocorrelation and less when there is. For a partial correlation controlling C confounds, pass N-C. The standardisation is sqrt(DF-3), the usual Fisher form.
 - **TAIL** -- 2 for two-tailed (default), 1 for one-tailed.
 
 Outputs

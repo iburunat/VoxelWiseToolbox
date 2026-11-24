@@ -8,7 +8,7 @@ Description
 
 Randomises the Fourier phases of the input while preserving its amplitude spectrum. The resulting surrogate retains the original power spectrum and corresponding circular autocorrelation structure, while disrupting the temporal or spatial arrangement of the signal.
 
-This is useful for permutation tests that require surrogate data with the same spectral properties as the observed data but without its original phase relationships. Phase-scrambled surrogates can be used to build permutation null distributions while preserving spatial or temporal autocorrelation. This approach is used by fmri_acfestimate and fmri_csdist for cluster-size correction.
+This is useful for permutation tests that require surrogate data with the same spectral properties as the observed data but without its original phase relationships. Phase-scrambled surrogates can be used to build permutation null distributions while preserving spatial or temporal autocorrelation. fmri_acfestimate uses it to build the null regressors from which the smoothing kernel is estimated.
 
 Usage
 -----

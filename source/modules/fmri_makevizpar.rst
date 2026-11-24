@@ -39,7 +39,7 @@ Outputs
 - **P.CROP** -- Bounding box. Default: [1 91 1 109 1 91] (full brain)
 - **P.GREYPAR** -- Depth shading, 0=flat to 1=strong. Default: 0.4
 - **P.TXT** -- Show slice index on each tile (0/1). Default: 1
-- **P.LEVEL** -- Isosurface value (see fmri_show3d). Default: 0.1
+- **P.LEVEL** -- Isosurface value (in data units, see fmri_show3d). Default: 0.1
 - **P.SURFALPHA** -- Activation surface opacity (0-1). Default: 1
 - **P.PLANE** -- 1=axial, 2=sagittal, 3=coronal. Default: 1. Not every viewer accepts all three. fmri_braincake implements all of them. fmri_showslices and fmri_showslices_int are axial and sagittal only and raise an error on 3. The fmri_showselectslices pair takes explicit slice indices, is axial only, and ignores this field. fmri_showplanes draws all three planes at once and reads P.COORD instead.
 - **P.INTERVAL** -- Voxel spacing between slices (1 or 2). Default: 2
