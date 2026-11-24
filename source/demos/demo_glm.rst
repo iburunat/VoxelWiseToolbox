@@ -6,9 +6,11 @@ demo_glm
 Description
 -----------
 
-Demonstrates a two-level analysis of simulated fMRI data. A voxelwise correlation map is calculated for each participant and then tested across participants. The recovered group map is compared with the expected signal.
+Demonstrates a two-level analysis of simulated fMRI data. A voxelwise correlation map is calculated for each participant and then tested across participants. The recovered group map is shown alongside the expected signal.
 
 This introductory demo uses an uncorrected voxel threshold of p < 0.001 and a fixed 20-voxel extent. See demo_csizeestimation and demo_tfce for multiple-comparison methods.
+
+Simulated participants are far more alike than real ones, so group t values here are much larger than any real cohort would produce.
 
 **Steps:**
 
