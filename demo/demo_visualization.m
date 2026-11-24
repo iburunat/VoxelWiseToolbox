@@ -248,7 +248,7 @@ fmri_show3d(region_map, 140, 15, [], [], [1 0 0], 0.08);
 
 % Lateral and medial views of both hemispheres, assembled into one figure.
 fmri_show3dhalfbrains(region_map)
-set(gcf, 'Name','7b. Four hemisphere views');  
+set(gcf, 'Name','7b. Four hemisphere views');
 
 % One column per region colours them separately. LABELS adds the legend.
 region_maps = region_map == 1:numel(regions);   % 228453 x 8
@@ -308,6 +308,8 @@ fmri_braincake(t_map, -90, 20, 1, sl.axial, 4, 2, 0.08, ...
                [-6 6], [45 66; -45 65], 10, cmap_hotcold, 'shiny');
 set(gcf, 'Name','9b1. The same, shiny');
 
+% for rendering a colorbar (see section %  13. Legends and colour scales,
+% for assembling figures by hand)
 fmri_colorbar(cmap_hotcold, [-6 6], 'Threshold', t_crit, 'Label', 't');
 set(gcf, 'Name','9b2. Colour scale, cmap_hotcold');
 
@@ -322,11 +324,11 @@ fmri_braincake(t_map, 0, 0, 2, sl.sagittal, 4, 2, 0.08, ...
 set(gcf, 'Name','9d. Sagittal slabs, with shell');
 
 % D. Layered cake, axial slabs stacked vertically
-%    STACKDIR = 1 and a positive elevation 
+%    STACKDIR = 1 and a positive elevation
 %    maskalpha (shell) is transparent (slabs are freely stackable)
 fmri_braincake(t_map, 90, 25, 1, sl.axial, 4, 1, 0, ...
                [-6 6], [45 50; -45 50], 5, cmap_hotcold);
-set(gcf, 'Name','9e. Layered cake, axial slabs stacked'); 
+set(gcf, 'Name','9e. Layered cake, axial slabs stacked');
 
 % set THICKNESS to make the slabs tile the gaps
 slices  = [15 30 47 59 65 71 80];
@@ -349,7 +351,7 @@ fmri_atlas
 figure, fmri_show3datlas(9, [1 5 9]);
 set(gcf, 'Name', ['10a. ' get(gcf,'Name') ' - three regions, default view']);
 
-figure, fmri_show3datlas(9, 1:9, [], 140, 15); 
+figure, fmri_show3datlas(9, 1:9, [], 140, 15);
 set(gcf, 'Name', ['10b. ' get(gcf,'Name') ' - all nine regions, oblique view']);
 
 figure, fmri_show3datlas(7, [], 1, -90, 90, [], 0.1);
@@ -367,14 +369,14 @@ set(gcf, 'Name', ['10f. ' get(gcf,'Name') ' - GREYPAR lowered to match the key']
 figure, fmri_show3datlas(6, 1:10, 1, 40, 20, [], 0.1);
 set(gcf, 'Name', ['10g. ' get(gcf,'Name') ' - ten regions, oblique view']);
 
-% fmri_show3dba splits a map into Brodmann areas and colours each 
+% fmri_show3dba splits a map into Brodmann areas and colours each
 % separately
 figure('Name','10h. Brodmann areas in a thresholded map');
 fmri_show3dba(t_map > t_crit*2.7, 180, 0, [], [], [], [], [], 0);
 
 % The Angular gyrus (L) spans BA 7, 19, 39 40
 figure('Name','10i. Brodmann areas within one gyrus');
-fmri_show3dba(atlas == 3, -90, 90,[],[],[],[],[],0);  
+fmri_show3dba(atlas == 3, -90, 90,[],[],[],[],[],0);
 
 %% 11. Plotting clusters/regions from fmri_regiontable
 % -------------------------------------------------------------------------

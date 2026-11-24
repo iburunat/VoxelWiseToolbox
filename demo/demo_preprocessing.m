@@ -97,7 +97,7 @@ fprintf('  Median CNR: %.2f\n\n', median(c(isfinite(c))));
 % -------------------------------------------------------------------
 % Apply the same temporal and nuisance-regression steps to the task regressor.
 % This produces a partial correlation controlling for the example motion
-% parameters. 
+% parameters.
 reg_proc = fmri_correctmovement(bold_regressor(:)', motion_file);
 reg_proc = fmri_detrend(reg_proc);
 reg_proc = fmri_bandpassfilter(reg_proc, fs, 0.01, 0.1);

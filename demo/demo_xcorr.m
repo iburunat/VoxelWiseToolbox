@@ -119,7 +119,7 @@ figure('Name', 'Peak correlation map');
 fmri_showslices(peak_r, 1, 2, [-1 1], [], [], 1, [], r_show);
 title(sprintf('Peak correlation across lags, signed (|r| >= %.2f)', r_show));
 
-% Zero is a meaningful lag, so hide subthreshold voxels with NaN instead of 
+% Zero is a meaningful lag, so hide subthreshold voxels with NaN instead of
 % zero; THRESHOLD = 0 then shows every finite lag. The blue-green-red map keeps
 % lag 0 visible against the grey anatomy.
 lagmap_cmap = fmri_makecmap([0 0 1; 0 0.75 0.2; 1 0 0], [], 64);

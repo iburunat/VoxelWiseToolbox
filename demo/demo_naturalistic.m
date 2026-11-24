@@ -44,9 +44,9 @@ rng(1);
 %% --- Step 1: simulate the cohort ------------------------------------------
 fprintf('Step 1: Simulating %d participants, %d sources...\n', n_subj, n_sources);
 
-% Request compressed data and reconstruct one participant at a time.
+% Reconstruct one participant at a time
 [X_comp, ~, W, svd_info, ~, sim] = fmri_simdata(n_sources, n_subj, T, TR, ...
-                                   [], [], phase_str, n_network, 1, false);
+                                   [], [], phase_str, n_network, 0, false);
 
 n_voxels = sim.mask.n_voxels;
 net_sign = sim.design.network.sign;
@@ -128,25 +128,22 @@ display_CS = 20;
 
 disp_pos = fmri_cleanclusters(p_map < alpha_th & t_map > 0, display_CS, 0);
 disp_neg = fmri_cleanclusters(p_map < alpha_th & t_map < 0, display_CS, 0);
-disp_map = double(disp_pos | disp_neg);
+disp_map = disp_pos | disp_neg;
+
 fprintf('  After the display filter: %d positive and %d negative voxels\n', ...
         nnz(disp_pos), nnz(disp_neg));
 
-if sum(disp_map) > 0
-    fmri_regiontable(disp_map, r_group, display_CS, 5, 1);
-else
-    fprintf('  No voxels survived the voxel and display thresholds.\n');
-end
-fprintf('\n');
+[~, s] = fmri_regiontable(disp_map, r_group, display_CS, 5, 1);
+disp(s)
 
 figure('Name', 'Group t-map');
-t_lim = max(3*t_crit, max(abs(t_map)));
+t_lim = max(3*t_crit, max(abs(t_map)));  % floor at 3*t_crit
 fmri_showslices(t_map, 1, 2, [-t_lim t_lim], [], [], 1, [], t_crit);
 title(sprintf('Group t-map (p < %.3f, |t| >= %.2f, df = %d)', ...
       alpha_th, t_crit, df_group));
 
 figure('Name', 'Surviving clusters, signed');
-signed_map = double(disp_pos > 0) - double(disp_neg > 0);
+signed_map = disp_pos - disp_neg;
 fmri_showslices(signed_map, 1, 2, [-1 1], [], [], 1, [], 0.5);
 title(sprintf('Surviving effects: red positive, blue negative (%d voxels)', ...
       nnz(disp_map)));
@@ -156,15 +153,17 @@ figure('Name', 'First-level r-map, participant 1');
 fmri_showslices(r_maps(:,1), 1, 2, [-0.6 0.6], [], [], 1, [], 0.3);
 title('Participant 1 r-map (display |r| >= 0.3)');
 
-if sum(disp_map) > 0
-    figure('Name', '3D isosurface');
-    fmri_show3d(disp_map, 40, 15, 0.5, 0.8, [0.2 0.5 0.9], 0.05);
-    title('Stimulus correlates (3D)');
-end
 
-fprintf(['The simulation contained %d positive and %d negative  blobs. ' ...
-         'SIM.TRUTH.POPULATION contains the expected correlation maps for ' ...
-         'optional recovery assessment.\n'], ...
-        nnz(net_sign > 0), nnz(net_sign < 0));
+figure('Name', '3D effects');
+maps_3d = [disp_pos, disp_neg];
+fmri_show3d(maps_3d, 40, 15, [], 0.8, ...
+                [1 0.2 0.2; 0.2 0.4 1], 0.05, [], [], ...
+                {'Positive', 'Negative'});
+    title('Stimulus-related effects, by direction');
+
+fprintf(['The simulated network comprised %d blob(s) with a positive and %d with a ' ...
+         'negative response, among %d sources in total. SIM.TRUTH.POPULATION holds ' ...
+         'the expected correlation maps for optional recovery assessment.\n'], ...
+        nnz(net_sign > 0), nnz(net_sign < 0), n_sources);
 
 fprintf('=== Naturalistic pipeline demo complete ===\n');

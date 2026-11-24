@@ -12,7 +12,7 @@
 %            v
 % 3. fmri_csthreshold     Extract the critical size at the chosen FWER
 %            |
-%            v 
+%            v
 % 4. fmri_cleanclusters   Remove clusters smaller than the critical size
 % ------------------------------------------------------------------------
 %
@@ -77,7 +77,7 @@ datapath = fullfile(tempdir, sprintf('vw_csize_demo_%d', feature('getpid')));
 if ~exist(datapath, 'dir'), mkdir(datapath); end
 
 % Smooth the noise first: unsmoothed voxel noise would leave cluster-size
-% correction nothing to correct, and real fMRI is smooth anyway. 
+% correction nothing to correct, and real fMRI is smooth anyway.
 % Applied as three 1D convolutions, one per axis.
 fwhm_vox = 3;                                  % smoothing FWHM in voxels
 sig      = fwhm_vox / sqrt(8*log(2));
