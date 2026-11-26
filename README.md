@@ -15,8 +15,8 @@
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-orange.svg" alt="MIT licence">
   </a>
-  <a href="https://zenodo.org/badge/latestdoi/1188857124">
-    <img src="https://zenodo.org/badge/1188857124.svg" alt="DOI">
+ <a href="https://doi.org/10.5281/zenodo.19173637">
+    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.19173637.svg" alt="DOI 10.5281/zenodo.19173637">
   </a>
   <a href="https://github.com/iburunat/VoxelWiseToolbox/releases">
     <img src="https://img.shields.io/github/v/release/iburunat/VoxelWiseToolbox?include_prereleases" alt="Latest release">
